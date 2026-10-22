@@ -1,0 +1,51 @@
+{
+  "model": "NearestNeighbors(metric='cosine')",
+  "model_version": "recommender-knn-v1",
+  "catalogue_size": 24,
+  "catalogue_kinds": [
+    "activity",
+    "catering",
+    "decor",
+    "service",
+    "theme"
+  ],
+  "features": {
+    "style_one_hot": [
+      "romantic_garden",
+      "modern_editorial",
+      "warm_minimal",
+      "playful_color",
+      "heritage_classic",
+      "coastal_air",
+      "disco_night",
+      "natural_rustic"
+    ],
+    "event_type_one_hot": [
+      "wedding",
+      "engagement",
+      "birthday",
+      "anniversary",
+      "college_festival",
+      "cultural_event",
+      "community_celebration",
+      "corporate_event",
+      "private_party"
+    ],
+    "venue_one_hot": [
+      "hotel_ballroom",
+      "garden_outdoor",
+      "loft_indoor",
+      "banquet_hall",
+      "community_hall",
+      "private_residence"
+    ],
+    "log_budget_per_guest": "natural log",
+    "log_capacity": "natural log",
+    "location_note": "location tiers available for context: ['metro', 'large_city', 'regional']"
+  },
+  "provenance": "Eventora curated catalogue \u2014 concept only, not a verified vendor or booking",
+  "caveats": [
+    "Catalogue-based content similarity, not collaborative filtering from user behaviour.",
+    "No vendor availability, quote, or booking is verified or implied."
+  ]
+}

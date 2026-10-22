@@ -1,0 +1,76 @@
+{
+  "model": "DecisionTreeClassifier",
+  "model_version": "budget-risk-dt-v1",
+  "classes": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "features": [
+    "budget_usd",
+    "predicted_cost_usd",
+    "coverage_ratio",
+    "contingency_pct",
+    "guest_count",
+    "predicted_cost_per_guest_usd",
+    "event_type_index (context only)"
+  ],
+  "training": {
+    "rows": 4000,
+    "train_rows": 3200,
+    "test_rows": 800,
+    "seed": 42,
+    "label_source": "documented rule-based labels on simulated plans",
+    "synthetic": true
+  },
+  "metrics": {
+    "accuracy": 0.9475,
+    "macro_f1": 0.9359,
+    "per_class": {
+      "low": {
+        "precision": 0.8588,
+        "recall": 0.9865,
+        "f1": 0.9182
+      },
+      "medium": {
+        "precision": 0.9589,
+        "recall": 0.8642,
+        "f1": 0.9091
+      },
+      "high": {
+        "precision": 0.9781,
+        "recall": 0.9829,
+        "f1": 0.9805
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          146,
+          2,
+          0
+        ],
+        [
+          24,
+          210,
+          9
+        ],
+        [
+          0,
+          7,
+          402
+        ]
+      ]
+    }
+  },
+  "trained_at": "2026-10-21T04:51:09.968689+00:00",
+  "caveats": [
+    "Trained on simulated budgets and rule-derived labels; it reproduces planning rules, not market outcomes.",
+    "A 'low' classification is not a guarantee that the final cost will stay within budget."
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "model": "RandomForestRegressor",
+  "model_version": "cost-rf-v1",
+  "target": "cost_usd (USD)",
+  "currency": "USD",
+  "dataset": {
+    "name": "eventora-synthetic-event-costs",
+    "version": "synthetic-v1",
+    "synthetic": true,
+    "rows": 3200,
+    "train_rows": 2560,
+    "test_rows": 640,
+    "seed": 42,
+    "sha256": "5ecf23053f065021f667ada2bf169f6eed27df216db656f0fd2211b8009f6b89"
+  },
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42
+  },
+  "preprocessing": {
+    "categorical": [
+      "event_type",
+      "location_tier",
+      "venue_type",
+      "catering_level",
+      "decor_level",
+      "photography"
+    ],
+    "numeric": [
+      "guest_count",
+      "duration_hours"
+    ],
+    "encoder": "OneHotEncoder(handle_unknown='ignore')"
+  },
+  "metrics": {
+    "mae_usd": 4175.38,
+    "rmse_usd": 5696.98,
+    "r2": 0.9556,
+    "mae_pct_of_mean": 9.25
+  },
+  "top_feature_importances": [
+    {
+      "feature": "guest_count",
+      "importance": 0.4284
+    },
+    {
+      "feature": "catering_level",
+      "importance": 0.4186
+    },
+    {
+      "feature": "location_tier",
+      "importance": 0.1207
+    },
+    {
+      "feature": "event_type",
+      "importance": 0.0086
+    },
+    {
+      "feature": "duration_hours",
+      "importance": 0.0075
+    },
+    {
+      "feature": "venue_type",
+      "importance": 0.0067
+    }
+  ],
+  "trained_at": "2026-10-21T04:51:09.483464+00:00",
+  "caveats": [
+    "Trained on a synthetic dataset generated from documented assumptions, not market transactions.",
+    "Metrics measure recovery of the generator's cost structure, not real-world forecast accuracy.",
+    "Currency is USD only; no FX conversion is performed.",
+    "Use estimates as a planning range and validate with local vendors."
+  ]
+}

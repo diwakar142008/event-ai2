@@ -1,0 +1,52 @@
+# Dependencies and build output
+node_modules/
+frontend/.next/
+frontend/out/
+dist/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets and local environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Local databases (contain personal data)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+backend/tests/test_eventora.db*
+
+# ML binaries are reproducible via scripts/train_models.py and must not bloat
+# the repository. Metrics summaries are checked into docs/metrics/ instead.
+backend/ml_artifacts/
+!backend/ml_artifacts/.gitkeep
+
+# Tooling and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.playwright/
+playwright-report/
+test-results/
+artifacts/logs/
+*.log
