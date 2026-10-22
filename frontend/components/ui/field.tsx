@@ -5,18 +5,21 @@ function Wrapper({
   label,
   hint,
   error,
+  required,
   children,
 }: {
   id: string;
   label: string;
   hint?: string;
   error?: string;
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
     <div>
       <label className="field-label" htmlFor={id}>
         {label}
+        {required ? <span className="ml-1 text-burgundy" aria-hidden="true">*</span> : null}
       </label>
       {children}
       {hint && !error ? <p className="field-hint">{hint}</p> : null}
@@ -34,13 +37,15 @@ export function TextField({
   label,
   hint,
   error,
+  required,
   className = "",
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & { id: string; label: string; hint?: string; error?: string }) {
   return (
-    <Wrapper id={id} label={label} hint={hint} error={error}>
+    <Wrapper id={id} label={label} hint={hint} error={error} required={required}>
       <input
         id={id}
+        required={required}
         {...props}
         className={`field-input ${className}`}
         aria-invalid={error ? true : undefined}
@@ -60,6 +65,7 @@ export function SelectField({
   label,
   hint,
   error,
+  required,
   children,
   className = "",
   ...props
@@ -71,8 +77,8 @@ export function SelectField({
   children: ReactNode;
 }) {
   return (
-    <Wrapper id={id} label={label} hint={hint} error={error}>
-      <select id={id} {...props} className={`field-input ${className}`} aria-invalid={error ? true : undefined}>
+    <Wrapper id={id} label={label} hint={hint} error={error} required={required}>
+      <select id={id} {...props} required={required} className={`field-input ${className}`} aria-invalid={error ? true : undefined}>
         {children}
       </select>
     </Wrapper>
@@ -84,12 +90,13 @@ export function TextAreaField({
   label,
   hint,
   error,
+  required,
   className = "",
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { id: string; label: string; hint?: string; error?: string }) {
   return (
-    <Wrapper id={id} label={label} hint={hint} error={error}>
-      <textarea id={id} {...props} className={`field-input min-h-[110px] resize-y ${className}`} aria-invalid={error ? true : undefined}>
+    <Wrapper id={id} label={label} hint={hint} error={error} required={required}>
+      <textarea id={id} {...props} required={required} className={`field-input min-h-[110px] resize-y ${className}`} aria-invalid={error ? true : undefined}>
         {props.children}
       </textarea>
     </Wrapper>

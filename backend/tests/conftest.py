@@ -54,6 +54,9 @@ ORIGIN = "http://testserver"
 def _create_schema():
     Base.metadata.create_all(bind=engine)
     yield
+    # SQLite keeps WAL handles open until SQLAlchemy releases pooled
+    # connections. Dispose before cleanup so this works reliably on Windows.
+    engine.dispose()
     Path(str(TEST_DB) + "-wal").unlink(missing_ok=True)
     Path(str(TEST_DB) + "-shm").unlink(missing_ok=True)
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, CheckCircle2, FileText, Plus, Sparkles } from "lucide-react";
 
 import { BudgetChart } from "@/components/studio/budget-chart";
+import { OccasionChart } from "@/components/studio/occasion-chart";
 import { EmptyState, PageHeader, RiskBadge, Stat, TextLink } from "@/components/studio/ui";
 import { ButtonLink } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
@@ -35,28 +36,38 @@ export default async function DashboardPage() {
   const hasEvents = stats.event_count > 0;
   const totalRisk = data.risk_distribution.low + data.risk_distribution.medium + data.risk_distribution.high;
   const firstName = user.display_name.split(" ")[0];
+  const occasions = [
+    ["Weddings", "wedding"],
+    ["Corporate", "corporate_event"],
+    ["Engagements", "engagement"],
+    ["Festivals", "college_festival"],
+    ["Community", "community_celebration"],
+    ["Birthdays", "birthday"],
+  ];
 
   return (
     <>
-      <PageHeader
-        eyebrow={`${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long" })} · Workspace`}
-        title={
-          <>
-            {firstName}, the room is <span className="display-italic">yours.</span>
-          </>
-        }
-        description="Your occasions, planning estimates, risks, and outstanding work — in one place."
-        actions={
-          <>
-            <ButtonLink href="/events/new" size="sm">
-              <Plus size={14} aria-hidden /> New event
-            </ButtonLink>
-            <ButtonLink href="/recommendations" variant="outline" size="sm">
-              Recommendations
-            </ButtonLink>
-          </>
-        }
-      />
+      <div className="dashboard-reveal">
+        <PageHeader
+          eyebrow={`${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long" })} · Workspace`}
+          title={
+            <>
+              {firstName}, the room is <span className="display-italic">yours.</span>
+            </>
+          }
+          description="Your occasions, planning estimates, risks, and outstanding work — in one place."
+          actions={
+            <>
+              <ButtonLink href="/events/new" size="sm">
+                <Plus size={14} aria-hidden /> New event
+              </ButtonLink>
+              <ButtonLink href="/recommendations" variant="outline" size="sm">
+                Recommendations
+              </ButtonLink>
+            </>
+          }
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
@@ -64,8 +75,10 @@ export default async function DashboardPage() {
           value={String(stats.upcoming_count)}
           hint={`${stats.event_count} total event${stats.event_count === 1 ? "" : "s"}`}
           accent
+          emptyProgress={stats.event_count === 0 ? 0 : undefined}
+          className="dashboard-stat dashboard-stagger-1"
         />
-        <Stat label="Committed budget" value={money(stats.total_budget_cents, { compact: true })} hint="Sum of saved event budgets" />
+        <Stat label="Committed budget" value={money(stats.total_budget_cents, { compact: true })} hint="Sum of saved event budgets" className="dashboard-stat dashboard-stagger-2" />
         <Stat
           label="Expenses logged"
           value={money(stats.total_expenses_cents, { compact: true })}
@@ -74,22 +87,73 @@ export default async function DashboardPage() {
               ? `${Math.round((stats.total_expenses_cents / stats.total_budget_cents) * 100)}% of committed budget`
               : "No budget committed yet"
           }
+          className="dashboard-stat dashboard-stagger-3"
         />
-        <Stat label="Open tasks" value={String(stats.tasks_open)} hint={`${stats.tasks_done} completed`} />
+        <Stat label="Open tasks" value={String(stats.tasks_open)} hint={`${stats.tasks_done} completed`} className="dashboard-stat dashboard-stagger-4" />
+      </div>
+
+      <div className="dashboard-sticky-action" role="region" aria-label="Quick action">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-mute">Keep planning</span>
+        <ButtonLink href="/events/new" size="sm" className="dashboard-sticky-button">
+          <Plus size={14} aria-hidden /> New event
+        </ButtonLink>
       </div>
 
       {!hasEvents ? (
         <div className="mt-6">
-          <EmptyState
-            icon={<Sparkles size={22} aria-hidden />}
-            title="Begin with a brief."
-            body="Create your first event to unlock cost estimates, budget-risk triage, a generated plan, and the full workspace."
-            action={
-              <ButtonLink href="/events/new" size="sm">
-                Plan an event <ArrowRight size={14} aria-hidden />
-              </ButtonLink>
-            }
-          />
+          <section className="dashboard-occasion-banner dashboard-reveal dashboard-stagger-2" aria-label="Choose an event occasion">
+            <div className="flex flex-col gap-2 px-4 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ivory">What are you planning?</p>
+              <p className="text-[10px] text-ivory/90">Choose an occasion to start your brief</p>
+            </div>
+            <div className="occasion-ticker dashboard-occasion-ticker" role="group" aria-label="Start planning by occasion">
+              <div className="occasion-ticker-track">
+                {[false, true].map((duplicate) => (
+                  <div className="occasion-ticker-group" aria-hidden={duplicate || undefined} key={duplicate ? "duplicate" : "links"}>
+                    {occasions.map(([label, type], index) => (
+                      <span className="occasion-ticker-entry" key={type}>
+                        {duplicate ? (
+                          <span className="occasion-ticker-item">{label}</span>
+                        ) : (
+                          <Link className="occasion-ticker-item" href={`/events/new?type=${type}`}>
+                            {label}
+                          </Link>
+                        )}
+                        {index < occasions.length - 1 ? <span className="occasion-ticker-dot" aria-hidden>·</span> : null}
+                      </span>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+          <div className="dashboard-empty-reveal">
+            <EmptyState
+              icon={<Sparkles size={22} aria-hidden />}
+              title="Begin with a brief."
+              body="Create your first event to unlock cost estimates, budget-risk triage, a generated plan, and the full workspace."
+              action={
+                <ButtonLink href="/events/new" size="sm" className="dashboard-cta">
+                  Plan an event <ArrowRight size={14} aria-hidden />
+                </ButtonLink>
+              }
+            />
+          </div>
+          <section className="mt-4 border border-line bg-[#fbf9f3]">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <div>
+                <p className="eyebrow text-[9px] text-ink-mute">Your workspace</p>
+                <h2 className="mt-0.5 font-display text-[21px]">Occasion mix</h2>
+              </div>
+              <span className="text-[11px] text-ink-mute">0 events</span>
+            </div>
+            <div className="p-4">
+              <OccasionChart data={data.occasion_distribution ?? []} />
+            </div>
+            <p className="border-t border-line px-4 py-3 text-[11px] leading-relaxed text-ink-mute">
+              This chart counts your saved events by occasion. It updates as you add events.
+            </p>
+          </section>
         </div>
       ) : (
         <div className="mt-6 grid gap-5 xl:grid-cols-[1.55fr_1fr]">
@@ -158,6 +222,22 @@ export default async function DashboardPage() {
               </div>
               <p className="border-t border-line px-4 py-2.5 text-[10px] leading-relaxed text-ink-mute">
                 Estimates come from a Random Forest trained on synthetic data. They are planning ranges, not quotes.
+              </p>
+            </section>
+
+            <section className="border border-line bg-[#fbf9f3]">
+              <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink-mute">Your events</p>
+                  <h2 className="mt-0.5 font-display text-[22px]">Occasion mix</h2>
+                </div>
+                <span className="text-[11px] tabular-nums text-ink-mute">{stats.event_count} total</span>
+              </div>
+              <div className="p-4">
+                <OccasionChart data={data.occasion_distribution ?? []} />
+              </div>
+              <p className="border-t border-line px-4 py-3 text-[11px] leading-relaxed text-ink-mute">
+                The chart shows how your saved events are split by occasion. Hover over a segment for its count and share.
               </p>
             </section>
           </div>

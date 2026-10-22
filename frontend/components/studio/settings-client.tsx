@@ -98,7 +98,7 @@ export function SettingsClient({
         <section className="border border-line bg-[#fbf9f3]">
           <div className="border-b border-line px-4 py-3">
             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink-mute">Account</p>
-            <h2 className="mt-0.5 font-display text-[22px]">Identity &amp; session</h2>
+            <h2 className="mt-0.5 font-display text-[22px]">Your profile</h2>
           </div>
           <form onSubmit={saveProfile} className="space-y-4 p-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -232,37 +232,37 @@ export function SettingsClient({
       </div>
 
       <div className="space-y-5">
-        <section className="border border-ink bg-ink p-4 text-ivory">
+        <section className="settings-config-panel border border-ink bg-ink p-4 text-ivory">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-champagne">Configuration</p>
-            <span className="label-chip border-line-dark text-[8.5px] text-[#b9b3a4]">
+            <span className="label-chip border-line-dark text-[9.5px] text-[#e4dccb]">
               {isProduction ? "Production" : "Local / development"}
             </span>
           </div>
-          <h2 className="mt-2 font-display text-[24px]">AI &amp; models</h2>
+          <h2 className="mt-2 font-display text-[24px]">Planning tools</h2>
           <div className="mt-4 space-y-2.5 text-[11.5px]">
             <div className="flex justify-between gap-3 border-b border-line-dark pb-2">
-              <span className="text-[#a9a396]">AI provider</span>
+              <span className="text-[#d5cdbd]">AI provider</span>
               <span>{aiStatus?.configured ? aiStatus.provider : "Not configured"}</span>
             </div>
             <div className="flex justify-between gap-3 border-b border-line-dark pb-2">
-              <span className="text-[#a9a396]">Model</span>
+              <span className="text-[#d5cdbd]">Model</span>
               <span className="max-w-[55%] truncate text-right">{aiStatus?.model ?? "—"}</span>
             </div>
             <div className="flex justify-between gap-3 border-b border-line-dark pb-2">
-              <span className="text-[#a9a396]">Fallback</span>
+              <span className="text-[#d5cdbd]">Fallback</span>
               <span className="text-right">{aiStatus?.fallback_available ? "Available" : "None"}</span>
             </div>
             <div className="flex justify-between gap-3 border-b border-line-dark pb-2">
-              <span className="text-[#a9a396]">Output schema</span>
+              <span className="text-[#d5cdbd]">Plan format</span>
               <span>{aiStatus?.structured_output_schema ?? "event_plan.v1"}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-[#a9a396]">Token ceiling</span>
+              <span className="text-[#d5cdbd]">Token ceiling</span>
               <span>{aiStatus?.max_output_tokens?.toLocaleString() ?? "—"}</span>
             </div>
           </div>
-          <p className="mt-4 border-t border-line-dark pt-3 text-[10px] leading-relaxed text-[#a9a396]">
+          <p className="mt-4 border-t border-line-dark pt-3 text-[11px] leading-relaxed text-[#d5cdbd]">
             {aiStatus?.configured
               ? "The provider key is stored server-side only. Settings displays status, never the key."
               : "Without a provider key, plans and replies come from the deterministic local planner and say so. Add a provider credential on the server to enable the provider."}
@@ -270,13 +270,13 @@ export function SettingsClient({
         </section>
 
         <section className="border border-line bg-[#fbf9f3] p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink-mute">Trained artifacts</p>
-          <h2 className="mt-0.5 font-display text-[22px]">Model status</h2>
+          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink-mute">Estimates</p>
+          <h2 className="mt-0.5 font-display text-[22px]">Estimate model status</h2>
           <ul className="mt-3 space-y-2">
             {[
-              ["Cost regression", metrics?.trained.cost, metrics?.cost ? `MAE $${Math.round(metrics.cost.metrics.mae_usd).toLocaleString()} · R² ${metrics.cost.metrics.r2}` : "Not trained"],
-              ["Recommendation KNN", metrics?.trained.recommender, metrics?.recommender ? `${metrics.recommender.catalogue_size} catalogue entries` : "Not trained"],
-              ["Budget-risk tree", metrics?.trained.budget_risk, metrics?.budget_risk ? `Accuracy ${metrics.budget_risk.metrics.accuracy}` : "Not trained"],
+              ["Cost estimate", metrics?.trained.cost, metrics?.cost ? `Typical error $${Math.round(metrics.cost.metrics.mae_usd).toLocaleString()} · fit ${metrics.cost.metrics.r2}` : "Unavailable"],
+              ["Idea matching", metrics?.trained.recommender, metrics?.recommender ? `${metrics.recommender.catalogue_size} ideas available` : "Unavailable"],
+              ["Budget risk check", metrics?.trained.budget_risk, metrics?.budget_risk ? `Accuracy ${metrics.budget_risk.metrics.accuracy}` : "Unavailable"],
             ].map(([label, trained, detail]) => (
               <li key={String(label)} className="flex items-start justify-between gap-3 border-b border-line/70 pb-2 text-[11.5px] last:border-0">
                 <div>
@@ -296,8 +296,8 @@ export function SettingsClient({
         </section>
 
         <section className="border border-line p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink-mute">Deployment profile</p>
-          <h2 className="mt-0.5 font-display text-[22px]">Local vs production</h2>
+          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ink-mute">Workspace information</p>
+          <h2 className="mt-0.5 font-display text-[22px]">Environment</h2>
           <p className="mt-2 text-[11.5px] leading-relaxed text-ink-soft">
             {isProduction
               ? "This instance reports a production environment. Secure cookies and HSTS are expected; verify HTTPS termination and the origin allowlist."

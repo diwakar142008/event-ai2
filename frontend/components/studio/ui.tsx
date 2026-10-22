@@ -30,18 +30,38 @@ export function Stat({
   value,
   hint,
   accent = false,
+  className = "",
+  emptyProgress,
 }: {
   label: string;
   value: string;
   hint?: string;
   accent?: boolean;
+  className?: string;
+  emptyProgress?: number;
 }) {
   return (
-    <div className={`border p-4 ${accent ? "border-ink bg-ink text-ivory" : "border-line bg-[#fbf9f3]"}`}>
-      <p className={`text-[9px] font-bold uppercase tracking-[0.16em] ${accent ? "text-champagne" : "text-ink-mute"}`}>
-        {label}
-      </p>
-      <p className="mt-2 font-display text-[30px] leading-none">{value}</p>
+    <div className={`border p-4 ${accent ? "border-ink bg-ink text-ivory dashboard-stat-accent" : "border-line bg-[#fbf9f3]"} ${className}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className={`text-[9px] font-bold uppercase tracking-[0.16em] ${accent ? "text-champagne" : "text-ink-mute"}`}>
+            {label}
+          </p>
+          <p className="mt-2 font-display text-[30px] leading-none">{value}</p>
+        </div>
+        {emptyProgress !== undefined ? (
+          <div className="relative grid h-11 w-11 shrink-0 place-items-center" role="img" aria-label={`Workspace setup ${emptyProgress}% complete; create your first event to finish setup`}>
+            <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
+              <circle cx="20" cy="20" r="16" fill="none" stroke="rgb(255 250 240 / 25%)" strokeWidth="3" />
+              <circle
+                cx="20" cy="20" r="16" fill="none" stroke="#d6bd7c" strokeWidth="3" strokeLinecap="round"
+                strokeDasharray={`${(Math.max(0, Math.min(100, emptyProgress)) / 100) * 100.53} 100.53`}
+              />
+            </svg>
+            <span className="text-[9px] font-bold text-champagne">{emptyProgress}%</span>
+          </div>
+        ) : null}
+      </div>
       {hint ? (
         <p className={`mt-2 text-[10.5px] leading-relaxed ${accent ? "text-[#b9b3a4]" : "text-ink-mute"}`}>{hint}</p>
       ) : null}

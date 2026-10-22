@@ -17,13 +17,13 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <>
+    <div className="settings-page">
       <PageHeader
         eyebrow="Settings"
-        title={<>The <span className="display-italic">fine print.</span></>}
-        description="Account, privacy controls, data deletion, and configuration status. No secret values are displayed on this page."
+        title={<>Your <span className="display-italic">settings.</span></>}
+        description="Update your profile, export or remove your event data, and check how planning estimates are configured. Provider secrets are never shown here."
       />
       <SettingsClient user={user} config={config} aiStatus={aiStatus} metrics={metrics} />
-    </>
+    </div>
   );
 }

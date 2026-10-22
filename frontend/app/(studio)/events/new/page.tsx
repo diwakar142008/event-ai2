@@ -5,15 +5,21 @@ import { PageHeader } from "@/components/studio/ui";
 
 export const metadata: Metadata = { title: "Plan an event", robots: { index: false } };
 
-export default function NewEventPage() {
+export default async function NewEventPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const { type } = await searchParams;
+  const eventType = type ?? "wedding";
   return (
-    <>
+    <div className="event-planning-page">
       <PageHeader
         eyebrow="New brief"
         title={<>Set the <span className="display-italic">scene.</span></>}
-        description="Three steps: the occasion, the direction, then a review with a real cost estimate before anything is saved."
+        description="Add the event basics, choose a style, then review a planning estimate. You can edit everything before saving."
       />
-      <EventWizard />
-    </>
+      <EventWizard initialEventType={eventType} />
+    </div>
   );
 }

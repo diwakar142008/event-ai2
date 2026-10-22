@@ -206,6 +206,7 @@ export interface DashboardData {
     created_at: string;
   }[];
   budget_chart: { name: string; budget: number; estimated: number }[];
+    occasion_distribution?: { event_type: string; count: number }[];
 }
 
 export interface ConfigStatus {

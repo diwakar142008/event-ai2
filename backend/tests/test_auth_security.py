@@ -1,8 +1,29 @@
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from tests.conftest import ORIGIN, Account
+
+
+def test_production_settings_reject_insecure_runtime_configuration():
+    from app.core.config import Settings
+
+    secure = "a" * 48
+    common = {
+        "app_env": "production",
+        "app_secret": secure,
+        "auth_dev_reset_echo": False,
+        "frontend_origins": "https://app.eventora.example",
+    }
+
+    with pytest.raises(ValidationError, match="APP_SECRET"):
+        Settings(**{**common, "app_secret": "dev-only-insecure-secret-change-me"})
+    with pytest.raises(ValidationError, match="AUTH_DEV_RESET_ECHO"):
+        Settings(**{**common, "auth_dev_reset_echo": True})
+    with pytest.raises(ValidationError, match="HTTPS origins"):
+        Settings(**{**common, "frontend_origins": "http://localhost:3000"})
 
 
 def test_health_reports_status_without_secrets(client: TestClient):

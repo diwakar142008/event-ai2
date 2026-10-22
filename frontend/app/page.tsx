@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowDownRight,
+  Download,
   ArrowRight,
   BadgeCheck,
   Bot,
@@ -12,7 +13,6 @@ import {
   FileJson,
   Fingerprint,
   KeyRound,
-  ScanEye,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -65,6 +65,8 @@ const categories = [
   },
 ];
 
+const occasionLabels = ["Festivals", "Corporate", "Weddings", "Engagements", "Community", "Birthdays"];
+
 const steps = [
   {
     number: "01",
@@ -88,52 +90,57 @@ const steps = [
 
 const faqs = [
   {
-    question: "Is the cost estimate a real quote?",
+    question: "Is this a real price quote?",
     answer:
-      "No. The Random Forest is trained on a synthetic dataset generated from documented planning assumptions, because no suitably licensed transaction dataset was available. It produces a planning range in USD, not a vendor quote, and its holdout metrics measure recovery of the generator's cost structure — not market accuracy. Always validate with written supplier quotes.",
+      "No. Cost estimates use computer-generated sample data and planning assumptions, not current prices from local suppliers. Use the estimate as an early budget guide and ask venues and suppliers for written quotes.",
   },
   {
-    question: "How does the AI planning assistant work?",
+    question: "What happens to my details when I use the AI assistant?",
     answer:
-      "The backend calls an OpenAI-compatible provider server-side, with the API key held only in server environment variables. Output is validated against a strict Pydantic schema before it is saved or shown. If no provider is configured, or the provider fails, a clearly labelled deterministic planner produces the same structured shape, so the product keeps working.",
+      "If an AI provider is enabled, relevant event details and your message may be sent to that provider to create a reply or plan. The provider's data policies apply. If no provider is enabled, the built-in planner creates a draft locally. Avoid adding sensitive personal information.",
   },
   {
-    question: "Who can see my event?",
+    question: "Who can see my saved event?",
     answer:
-      "Only the signed-in account that created it. Every read, update, and delete is filtered by owner on the server. Another account using the same event ID receives a 404, which avoids confirming that the record exists.",
+      "Eventora checks account ownership whenever someone opens an event, plan, note, task, or expense. Other user accounts cannot view your records. The operator of a self-hosted instance may have access to its database, so choose an instance and hosting provider you trust.",
   },
   {
-    question: "Does Eventora book vendors or check availability?",
+    question: "Can I download or delete my data?",
     answer:
-      "No. Recommendations come from an original editorial catalogue and do not represent live vendor inventory. No availability, booking, or price is verified. The vendor checklist is a tool for confirming those details directly.",
+      "Open Settings, then Privacy & data, to download your account and event records or delete all event data. Deleting your account permanently removes the account and its records.",
   },
   {
-    question: "Is the application search-engine indexed?",
+    question: "Does Eventora contact or book suppliers?",
     answer:
-      "The landing page is public. Dashboard, events, recommendations, settings, and authentication routes are excluded in robots.txt, and authenticated API responses are marked no-store.",
+      "No. Eventora does not contact suppliers, check live prices or availability, or make bookings. Recommendations come from the in-app catalogue; use the checklist to confirm details directly with suppliers.",
+  },
+  {
+    question: "Where can I see my event-day flowchart?",
+    answer:
+      "Create an event and generate its plan, then open the Timeline tab. You will find a flowchart built from that event's schedule, along with a preparation timeline.",
   },
 ];
 
 const securityItems = [
   {
-    icon: KeyRound,
-    title: "Secrets stay server-side",
-    body: "Provider keys are read from server environment variables only. The browser bundle never receives them, and settings displays configuration status without values.",
-  },
-  {
     icon: Fingerprint,
-    title: "Ownership on every record",
-    body: "Event, task, expense, note, and plan queries are scoped to the authenticated user. Client-supplied IDs are never accepted as proof of identity.",
+    title: "Events are tied to your account",
+    body: "Your saved event, plan, notes, tasks, and expenses are only available to the signed-in account that created them.",
   },
   {
-    icon: ScanEye,
-    title: "Validated at the boundary",
-    body: "Strict Pydantic schemas reject unexpected fields, oversized input, and non-finite numbers. SQL goes through a parameterised ORM layer.",
+    icon: KeyRound,
+    title: "Clear about AI data use",
+    body: "When an AI provider is enabled, relevant event details are sent to it for your request. The provider key stays on the server. Without a provider, the built-in planner creates a draft without contacting an external AI service.",
+  },
+  {
+    icon: Download,
+    title: "You can export or delete your data",
+    body: "Settings lets you download account and event records, delete all event data, or permanently delete your account.",
   },
   {
     icon: ShieldCheck,
-    title: "Bounded and rate-limited",
-    body: "Body-size caps, request timeouts, token ceilings, CSRF protection, and database-backed rate limits on authentication, AI, and ML endpoints.",
+    title: "Planning help, not live bookings",
+    body: "Cost estimates use generated sample data. Eventora does not verify supplier prices or availability, contact vendors, or place bookings.",
   },
 ];
 
@@ -174,20 +181,6 @@ export default async function LandingPage() {
                   Explore the experience
                 </ButtonLink>
               </div>
-              <dl className="mt-12 grid grid-cols-3 gap-4 border-t border-line pt-5 text-[11.5px]">
-                <div>
-                  <dt className="eyebrow text-[9px] text-ink-mute">Intelligence</dt>
-                  <dd className="mt-1.5 font-medium">3 trained models</dd>
-                </div>
-                <div>
-                  <dt className="eyebrow text-[9px] text-ink-mute">Assistant</dt>
-                  <dd className="mt-1.5 font-medium">Schema-validated plans</dd>
-                </div>
-                <div>
-                  <dt className="eyebrow text-[9px] text-ink-mute">Currency</dt>
-                  <dd className="mt-1.5 font-medium">USD planning ranges</dd>
-                </div>
-              </dl>
             </div>
 
             <div className="animate-fade relative z-10">
@@ -223,19 +216,26 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="relative z-10 border-t border-line bg-ivory/60">
-            <div className="shell flex flex-wrap items-center justify-between gap-x-8 gap-y-2 py-3.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-mute">
-              <span>Weddings</span>
-              <span aria-hidden>·</span>
-              <span>Engagements</span>
-              <span aria-hidden>·</span>
-              <span>Birthdays</span>
-              <span aria-hidden>·</span>
-              <span>Festivals</span>
-              <span aria-hidden>·</span>
-              <span>Community</span>
-              <span aria-hidden>·</span>
-              <span>Corporate</span>
+          <div className="relative z-10 overflow-hidden border-t border-line bg-ivory/60 py-3.5">
+            <div className="shell">
+              <div className="occasion-ticker" role="group" aria-label="Event occasions">
+                <div className="occasion-ticker-track">
+                  {[false, true].map((isClone) => (
+                    <div
+                      className="occasion-ticker-group"
+                      aria-hidden={isClone || undefined}
+                      key={isClone ? "clone" : "original"}
+                    >
+                      {occasionLabels.map((label) => (
+                        <span className="occasion-ticker-entry" key={label}>
+                          <span className="occasion-ticker-item">{label}</span>
+                          <span className="occasion-ticker-dot" aria-hidden>·</span>
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -307,14 +307,14 @@ export default async function LandingPage() {
 
             <div className="grid gap-px border border-line bg-line md:grid-cols-3">
               {steps.map((step) => (
-                <article key={step.number} className="bg-ivory p-6 sm:p-8">
+                <article key={step.number} className="bg-[#fbf9f3] p-6 sm:p-8">
                   <div className="flex items-baseline justify-between">
-                    <span className="font-display text-[52px] leading-none text-champagne">{step.number}</span>
-                    <Mark className="h-4 w-4 text-ink-mute" />
+                    <span className="font-display text-[52px] font-semibold leading-none text-burgundy">{step.number}</span>
+                    <Mark className="h-4 w-4 text-burgundy" />
                   </div>
                   <h3 className="mt-8 font-display text-[26px]">{step.title}</h3>
-                  <p className="mt-3 text-[13.5px] leading-relaxed text-ink-soft">{step.body}</p>
-                  <p className="mt-6 border-t border-line pt-3 text-[10.5px] uppercase tracking-[0.12em] text-ink-mute">
+                  <p className="mt-3 text-[14.5px] leading-relaxed text-ink">{step.body}</p>
+                  <p className="mt-6 border-t border-line pt-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-soft">
                     {step.detail}
                   </p>
                 </article>
@@ -330,63 +330,61 @@ export default async function LandingPage() {
               <div>
                 <div className="flex items-center gap-3">
                   <span className="h-px w-10 bg-champagne" />
-                  <p className="eyebrow text-champagne">03 / Machine intelligence</p>
+                  <p className="eyebrow text-champagne">03 / Cost planning</p>
                 </div>
                 <h2 className="display mt-5 text-[clamp(2.5rem,5.3vw,4.8rem)] text-ivory">
-                  The budget,
+                  Plan your budget
                   <br />
-                  <span className="display-italic text-champagne">before</span> the invoices.
+                  <span className="display-italic text-champagne">before you book.</span>
                 </h2>
                 <p className="mt-6 max-w-[48ch] text-[14.5px] leading-relaxed text-[#b9b3a4]">
-                  A Random Forest regressor trained on nine event features returns a planning estimate with a
-                  per-guest breakdown. It does not pretend to be a quote. It surfaces the drivers, the model
-                  card, and the caveats in the same panel.
+                  Add a few details about your event to see an estimated total and cost per guest. Use it as an
+                  early planning guide; it is not a quote from a venue or supplier.
                 </p>
 
                 <div className="mt-9 space-y-5">
                   {[
                     {
                       icon: ChartNoAxesColumnIncreasing,
-                      title: "Cost prediction",
-                      body: "RandomForestRegressor · OneHotEncoder for categorical features · joblib pipeline with a reproducible training script.",
+                      title: "See an estimated cost",
+                      body: "Get a rough total based on your occasion, guest count, location, venue, catering, and decor.",
                     },
                     {
                       icon: Sparkles,
-                      title: "Recommendation engine",
-                      body: "NearestNeighbors over a 24-piece curated catalogue using style, occasion, venue, budget-per-guest, and capacity vectors.",
+                      title: "Find ideas that fit",
+                      body: "Browse event concepts matched to your occasion, style, venue, guest count, and budget.",
                     },
                     {
                       icon: BadgeCheck,
-                      title: "Budget-risk triage",
-                      body: "DecisionTreeClassifier with documented rule-derived labels: low, medium, and high, each with a plain-language definition.",
+                      title: "Check for budget pressure",
+                      body: "A low, medium, or high warning can help you spot when your budget may be tight. It is a guide, not a guarantee.",
                     },
                   ].map((item) => (
                     <div key={item.title} className="flex gap-4 border-t border-line-dark pt-4">
                       <item.icon size={18} aria-hidden className="mt-0.5 shrink-0 text-champagne" />
                       <div>
-                        <h3 className="text-[13px] font-bold uppercase tracking-[0.1em] text-ivory">{item.title}</h3>
-                        <p className="mt-1 text-[12.5px] leading-relaxed text-[#a9a396]">{item.body}</p>
+                        <h3 className="text-[15px] font-semibold text-ivory">{item.title}</h3>
+                        <p className="mt-1 text-[14px] leading-relaxed text-[#c9c2b2]">{item.body}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-8 grid grid-cols-2 gap-px border border-line-dark bg-line-dark sm:grid-cols-4">
+                <div className="mt-8 grid grid-cols-2 gap-px border border-line-dark bg-line-dark sm:grid-cols-3">
                   {[
-                    { label: "Holdout MAE", value: costMetrics ? `$${Math.round(costMetrics.mae_usd).toLocaleString()}` : "—" },
-                    { label: "Holdout R²", value: costMetrics ? costMetrics.r2.toFixed(3) : "—" },
-                    { label: "Synthetic rows", value: metrics?.cost?.dataset?.rows?.toLocaleString() ?? "—" },
-                    { label: "Risk accuracy", value: riskMetrics ? riskMetrics.accuracy.toFixed(3) : "—" },
+                    { label: "Typical sample test gap*", value: costMetrics ? `$${Math.round(costMetrics.mae_usd).toLocaleString()}` : "N/A" },
+                    { label: "Sample event plans", value: metrics?.cost?.dataset?.rows?.toLocaleString() ?? "N/A" },
+                    { label: "Budget alerts correct*", value: riskMetrics ? `${(riskMetrics.accuracy * 100).toFixed(1)}%` : "N/A" },
                   ].map((stat) => (
                     <div key={stat.label} className="bg-analytics p-3.5">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#8f897c]">{stat.label}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#c9c2b2]">{stat.label}</p>
                       <p className="mt-1.5 font-display text-[22px] text-ivory">{stat.value}</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-[10.5px] leading-relaxed text-[#7f7a6e]">
-                  Metrics come from a reproducible synthetic holdout split. They show the models recover the
-                  generator&apos;s assumptions. They are not evidence of real-world forecast accuracy.
+                <p className="mt-3 text-[12px] leading-relaxed text-[#c9c2b2]">
+                  *These figures use computer-generated examples, not real supplier prices. They show how the
+                  models handled those examples; your actual event costs may differ.
                 </p>
               </div>
 
@@ -394,8 +392,8 @@ export default async function LandingPage() {
                 <CostEstimator />
                 <div className="mt-4 flex items-start gap-2.5 border border-line-dark p-3 text-[11px] leading-relaxed text-[#a9a396]">
                   <Database size={14} aria-hidden className="mt-0.5 shrink-0 text-sage" />
-                  Model artifacts are generated locally by <code className="text-[#d8d0bf]">scripts/train_models.py</code>.
-                  If they are missing, the API reports an honest 503 instead of inventing a prediction.
+                  This estimate uses sample data, so treat it as a starting point. Confirm actual prices with
+                  venues and suppliers before you book.
                 </div>
               </div>
             </div>
@@ -406,32 +404,31 @@ export default async function LandingPage() {
         <section id="assistant" className="border-b border-line py-16 sm:py-24">
           <div className="shell grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
-              <p className="eyebrow text-burgundy">04 / Generative planning</p>
+              <p className="eyebrow text-burgundy">04 / Planning assistant</p>
               <h2 className="display mt-3 text-[clamp(2.4rem,5vw,4.2rem)]">
-                A plan with <span className="display-italic">structure.</span>
+                Turn your event idea into an <span className="display-italic">action plan.</span>
               </h2>
               <p className="mt-6 max-w-[46ch] text-[14.5px] leading-relaxed text-ink-soft">
-                The assistant returns a validated object, never loose prose pretending to be a plan. Every
-                section has an explicit schema, and the server validates it before saving. If the provider is
-                unavailable, the deterministic fallback produces the same shape and says so.
+                Share a few event details to get a first draft with a budget breakdown, preparation timeline,
+                event-day schedule, and supplier checklist. Review and edit the plan before saving it. If the
+                AI service is unavailable, the built-in planner can still create a draft.
               </p>
 
-              <ul className="mt-7 grid grid-cols-2 gap-x-5 gap-y-2.5 text-[12.5px]">
+              <ul className="mt-7 grid grid-cols-1 gap-x-5 gap-y-2.5 text-[13px] sm:grid-cols-2">
                 {[
-                  "event_summary",
-                  "theme",
-                  "budget_breakdown",
-                  "recommendations",
-                  "preparation_timeline",
-                  "event_day_schedule",
-                  "vendor_checklist",
-                  "cost_saving_suggestions",
-                  "assumptions",
-                  "warnings",
+                  "Event overview and theme",
+                  "Budget by category",
+                  "Ideas that fit your event",
+                  "Preparation timeline",
+                  "Event-day schedule",
+                  "Supplier checklist",
+                  "Ways to save money",
+                  "Planning assumptions",
+                  "Items to double-check",
                 ].map((field) => (
                   <li key={field} className="flex items-center gap-2 border-b border-line/70 pb-1.5">
                     <CircleCheck size={12} aria-hidden className="text-burgundy" />
-                    <span className="font-mono text-[11.5px] text-ink-soft">{field}</span>
+                    <span className="text-ink-soft">{field}</span>
                   </li>
                 ))}
               </ul>
@@ -439,11 +436,14 @@ export default async function LandingPage() {
               <div className="mt-7 flex items-start gap-3 border-l-2 border-sage bg-sage-soft/40 p-4">
                 <Bot size={17} aria-hidden className="mt-0.5 shrink-0 text-ink-soft" />
                 <p className="text-[12px] leading-relaxed text-ink-soft">
-                  Prompts treat notes and revision requests as untrusted data. The model receives no tools,
-                  cannot execute code, and cannot confirm vendor availability. Provider keys never reach the
-                  browser.
+                  Your draft is a starting point. Confirm prices, dates, and supplier availability directly;
+                  Eventora does not contact or book suppliers.
                 </p>
               </div>
+
+              <ButtonLink href="/events/new" className="mt-6">
+                Build my event plan <ArrowRight size={15} aria-hidden />
+              </ButtonLink>
             </div>
 
             <div className="relative">
@@ -452,18 +452,18 @@ export default async function LandingPage() {
                 <div className="flex items-center justify-between border-b border-line px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-burgundy" />
-                    <p className="text-[10.5px] font-bold uppercase tracking-[0.14em]">Plan preview</p>
+                    <p className="text-[10.5px] font-bold uppercase tracking-[0.14em]">Example plan</p>
                   </div>
-                  <span className="label-chip text-[8.5px]">Illustrative example</span>
+                  <span className="label-chip text-[8.5px]">120-guest wedding</span>
                 </div>
                 <div className="max-h-[480px] overflow-auto scroll-slim p-4 sm:p-5">
                   <p className="eyebrow text-[8.5px] text-ink-mute">Event summary</p>
                   <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-soft">
-                    An intimate garden wedding for 120 guests in a warm minimal register: a long-table dinner,
-                    a single suspended floral gesture, and a ceremony timed to the last hour of light.
+                    A garden wedding for 120 guests with dinner, simple floral decor, and an outdoor ceremony near sunset.
                   </p>
                   <div className="mt-4 border-t border-line pt-3">
-                    <p className="eyebrow text-[8.5px] text-ink-mute">Budget breakdown · USD</p>
+                    <p className="eyebrow text-[8.5px] text-ink-mute">Example budget (USD)</p>
+                    <p className="mt-1 text-[10px] text-ink-mute">Amounts and shares are examples from a $45,000 plan.</p>
                     <ul className="mt-2 space-y-1.5">
                       {[
                         ["Venue & site", "$11,700", "26%"],
@@ -471,6 +471,7 @@ export default async function LandingPage() {
                         ["Florals & decoration", "$5,400", "12%"],
                         ["Photography", "$4,950", "11%"],
                         ["Contingency", "$2,700", "6%"],
+                        ["Other costs", "$6,750", "15%"],
                       ].map(([label, amount, share]) => (
                         <li key={label} className="flex items-baseline gap-2 text-[12px]">
                           <span className="flex-1">{label}</span>
@@ -479,27 +480,31 @@ export default async function LandingPage() {
                         </li>
                       ))}
                     </ul>
+                    <div className="mt-2 flex justify-between border-t border-line pt-2 text-[12px] font-semibold">
+                      <span>Total example budget</span>
+                      <span>$45,000</span>
+                    </div>
                   </div>
                   <div className="mt-4 grid gap-3 border-t border-line pt-3 sm:grid-cols-2">
                     <div>
-                      <p className="eyebrow text-[8.5px] text-ink-mute">Preparation</p>
+                      <p className="eyebrow text-[8.5px] text-ink-mute">Before the event</p>
                       <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-soft">
-                        16 weeks out — lock brief and venue shortlist.
+                        16 weeks out - confirm date and venue.
                         <br />
-                        8 weeks out — menu tasting and floral mock-up.
+                        8 weeks out - confirm menu and decor.
                         <br />
-                        2 weeks out — supplier run sheet issued.
+                        2 weeks out - share the final schedule with suppliers.
                       </p>
                     </div>
                     <div>
-                      <p className="eyebrow text-[8.5px] text-ink-mute">Warnings</p>
+                      <p className="eyebrow text-[8.5px] text-ink-mute">Double-check</p>
                       <p className="mt-1.5 border-l-2 border-champagne pl-2 text-[11.5px] leading-relaxed text-ink-soft">
-                        Rain plan required for an outdoor ceremony. Venue power capacity unverified.
+                        Have a rain backup for the outdoor ceremony. Confirm the venue has enough power.
                       </p>
                     </div>
                   </div>
                   <p className="mt-4 flex items-center gap-1.5 text-[10px] text-ink-mute">
-                    <FileJson size={11} aria-hidden /> Validated against event_plan.v1 before saving.
+                    <FileJson size={11} aria-hidden /> The draft is checked for required sections before saving.
                   </p>
                 </div>
               </div>
@@ -514,13 +519,12 @@ export default async function LandingPage() {
               <div>
                 <p className="eyebrow text-burgundy">05 / Trust</p>
                 <h2 className="display mt-3 text-[clamp(2.4rem,5vw,4.2rem)]">
-                  Private by <span className="display-italic">construction.</span>
+                  Your privacy and <span className="display-italic">choices.</span>
                 </h2>
               </div>
               <p className="max-w-[48ch] text-[14px] leading-relaxed text-ink-soft">
-                Security is part of the product surface: server-enforced ownership, bounded input, honest
-                error states, and a settings page that shows configuration status without ever revealing a
-                secret. The limits are documented too.
+                Your events are separated by account, AI use is explained, and Settings gives you ways to
+                download or delete your records. Here is what that means in practice.
               </p>
             </div>
 
@@ -535,10 +539,15 @@ export default async function LandingPage() {
                 </article>
               ))}
             </div>
-            <p className="mt-4 text-[11px] text-ink-mute">
-              Implemented controls and residual risks are documented in <span className="font-mono">docs/security.md</span>.
-              This is not a penetration test or a security certification.
-            </p>
+            <div className="mt-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-[70ch] text-[11.5px] leading-relaxed text-ink-mute">
+                This project has not had an independent security audit. The operator of a self-hosted instance may
+                have access to its stored data.
+              </p>
+              <ButtonLink href="/settings" variant="outline" size="sm" className="shrink-0">
+                Open privacy settings <ArrowRight size={13} aria-hidden />
+              </ButtonLink>
+            </div>
           </div>
         </section>
 
@@ -548,15 +557,15 @@ export default async function LandingPage() {
             <div>
               <p className="eyebrow text-burgundy">06 / Questions</p>
               <h2 className="display mt-3 text-[clamp(2.2rem,4.4vw,3.6rem)]">
-                Read the <span className="display-italic">fine print.</span>
+                Common <span className="display-italic">questions.</span>
               </h2>
               <p className="mt-5 max-w-[32ch] text-[13px] leading-relaxed text-ink-mute">
-                What is modelled, what is catalogue, and what is deliberately not claimed.
+                Straight answers about your event data, estimates, suppliers, and event schedule.
               </p>
             </div>
             <div className="border-t border-line">
               {faqs.map((faq, index) => (
-                <details key={faq.question} className="group border-b border-line py-4" open={index === 0}>
+                <details key={faq.question} name="eventora-faq" className="group border-b border-line py-4" open={index === 0}>
                   <summary className="flex cursor-pointer list-none items-start justify-between gap-5 text-[14.5px] font-semibold marker:hidden">
                     <span className="flex gap-4">
                       <span className="mt-0.5 font-mono text-[10px] text-ink-mute">0{index + 1}</span>

@@ -59,10 +59,10 @@ export function CostEstimator() {
     <div className="border border-line-dark bg-analytics-soft/80 p-5 sm:p-7">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <p className="eyebrow text-champagne">Live model · try it</p>
-          <h3 className="mt-1 font-display text-2xl text-ivory">Cost intelligence</h3>
+          <p className="eyebrow text-champagne">Try a sample estimate</p>
+          <h3 className="mt-1 font-display text-2xl text-ivory">Estimate your event cost</h3>
         </div>
-        <span className="label-chip border-line-dark text-[9px] text-[#b9b3a4]">USD · synthetic-trained</span>
+        <span className="label-chip border-line-dark text-[9px] text-[#b9b3a4]">Sample estimate (USD)</span>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -154,7 +154,7 @@ export function CostEstimator() {
         className="btn btn-light mt-5 w-full min-h-[44px] text-[11px]"
       >
         {loading ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
-        {loading ? "Running model" : "Estimate this event"}
+        {loading ? "Estimating..." : "Estimate this event"}
         {!loading ? <ArrowRight size={15} aria-hidden /> : null}
       </button>
 
@@ -166,7 +166,7 @@ export function CostEstimator() {
 
       {result ? (
         <div className="mt-5 border-t border-line-dark pt-5">
-          <p className="eyebrow text-[9px] text-[#a9a396]">Random Forest planning estimate</p>
+          <p className="eyebrow text-[9px] text-[#a9a396]">Estimated total (sample-based guide)</p>
           <p className="mt-1 font-display text-5xl text-ivory">{money(result.predicted_cost_cents)}</p>
           <p className="mt-1 text-[13px] text-[#bdb6a7]">
             {money(result.cost_per_guest_cents)} per guest · {result.guest_count} guests
@@ -174,15 +174,13 @@ export function CostEstimator() {
           <ul className="mt-4 space-y-1.5 text-[12px] text-[#c9c2b2]">
             {result.factors.slice(0, 3).map((factor) => (
               <li key={factor.name} className="flex justify-between gap-3 border-b border-line-dark/60 pb-1.5">
-                <span className="capitalize">{factor.name}</span>
+                <span>{titleCase(factor.name)}</span>
                 <span className="tabular-nums text-[#8f897c]">{factor.detail}</span>
               </li>
             ))}
           </ul>
           <p className="mt-4 text-[11px] leading-relaxed text-[#8f897c]">
-            Synthetic-data estimate, not a quote. {result.model.metrics?.mae_usd
-              ? `Holdout MAE $${result.model.metrics.mae_usd.toLocaleString()} (generator recovery, not market accuracy).`
-              : ""}
+            This is a sample-based estimate, not a supplier quote. Confirm current prices before booking.
           </p>
         </div>
       ) : null}

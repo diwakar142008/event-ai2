@@ -41,9 +41,11 @@ def dashboard(
     open_tasks = [t for t in tasks if not t.done]
 
     risk_distribution = {"low": 0, "medium": 0, "high": 0, "unassessed": 0}
+    occasion_distribution: dict[str, int] = {}
     for event in events:
         key = event.risk_level if event.risk_level in risk_distribution else "unassessed"
         risk_distribution[key] += 1
+        occasion_distribution[event.event_type] = occasion_distribution.get(event.event_type, 0) + 1
 
     plan_rows = db.execute(
         select(Plan, Event)
@@ -81,6 +83,10 @@ def dashboard(
         "upcoming": [EventOut(**serialize_event(e)).model_dump(mode="json") for e in upcoming],
         "recent": [EventOut(**serialize_event(e)).model_dump(mode="json") for e in recent],
         "risk_distribution": risk_distribution,
+        "occasion_distribution": [
+            {"event_type": event_type, "count": count}
+            for event_type, count in sorted(occasion_distribution.items(), key=lambda item: (-item[1], item[0]))
+        ],
         "tasks": [
             {
                 "id": t.id,

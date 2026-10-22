@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -79,6 +79,23 @@ class Settings(BaseSettings):
         if value not in allowed:
             raise ValueError(f"ai_provider must be one of {sorted(allowed)}")
         return value
+
+    @model_validator(mode="after")
+    def _validate_production_security(self) -> "Settings":
+        """Fail early when a production deployment is missing critical controls."""
+        if not self.is_production:
+            return self
+
+        has_placeholder_secret = self.app_secret.startswith("dev-only") or self.app_secret == "replace-with-a-long-random-secret"
+        if has_placeholder_secret or len(self.app_secret) < 32:
+            raise ValueError("APP_SECRET must be a unique random value of at least 32 characters in production")
+        if self.auth_dev_reset_echo:
+            raise ValueError("AUTH_DEV_RESET_ECHO must be false in production")
+        if not self.allowed_origins:
+            raise ValueError("FRONTEND_ORIGINS must contain at least one HTTPS origin in production")
+        if any(not origin.startswith("https://") for origin in self.allowed_origins):
+            raise ValueError("FRONTEND_ORIGINS must use HTTPS origins in production")
+        return self
 
     @property
     def allowed_origins(self) -> list[str]:

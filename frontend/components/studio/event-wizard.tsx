@@ -49,15 +49,18 @@ const initialForm = {
 type FormState = typeof initialForm;
 
 const steps = [
-  { number: "01", title: "The occasion", note: "What, when, where, how many" },
-  { number: "02", title: "The direction", note: "Styling, service, and access" },
-  { number: "03", title: "Review", note: "Estimate before you commit" },
+  { number: "01", title: "The occasion", note: "Date, place, and guests" },
+  { number: "02", title: "The details", note: "Style, venue, and services" },
+  { number: "03", title: "Review", note: "Check your estimate" },
 ];
 
-export function EventWizard() {
+export function EventWizard({ initialEventType = "wedding" }: { initialEventType?: string }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...initialForm,
+    event_type: EVENT_TYPES.some((option) => option.value === initialEventType) ? initialEventType : "wedding",
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<CostPrediction | null>(null);
@@ -202,12 +205,12 @@ export function EventWizard() {
 
   return (
     <div>
-      <ol className="mb-6 grid grid-cols-3 border border-line bg-[#fbf9f3]">
+      <ol className="wizard-stepper mb-6 grid grid-cols-3 border border-line bg-[#fbf9f3]" aria-label="Event setup progress">
         {steps.map((item, index) => {
           const active = index === step;
           const done = index < step;
           return (
-            <li key={item.number} className={`border-r border-line px-3 py-3 last:border-0 sm:px-5 ${active ? "bg-ink text-ivory" : ""}`}>
+            <li key={item.number} className={`wizard-step border-r border-line px-3 py-3 last:border-0 sm:px-5 ${active ? "bg-ink text-ivory" : done ? "bg-sage-soft/50" : ""}`}>
               <button
                 type="button"
                 onClick={() => index < step && setStep(index)}
@@ -247,6 +250,7 @@ export function EventWizard() {
               <div>
                 <p className="eyebrow text-burgundy">Step one</p>
                 <h2 className="mt-1 font-display text-[28px]">What are we planning?</h2>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">Choose an occasion, then add the date, location, guest count, and budget. An asterisk marks required fields.</p>
               </div>
 
               <fieldset>
@@ -255,8 +259,8 @@ export function EventWizard() {
                   {EVENT_TYPES.map((type) => (
                     <label
                       key={type.value}
-                      className={`cursor-pointer border p-2.5 transition-colors ${
-                        form.event_type === type.value ? "border-burgundy bg-[#f3e9e6]" : "border-line bg-ivory hover:border-ink-mute"
+                      className={`wizard-choice cursor-pointer border p-3 transition-colors ${
+                        form.event_type === type.value ? "border-burgundy bg-[#f3e9e6]" : "border-line bg-ivory hover:border-ink-mute hover:bg-[#f5f0e5]"
                       }`}
                     >
                       <input
@@ -267,8 +271,11 @@ export function EventWizard() {
                         onChange={() => update("event_type", type.value)}
                         className="sr-only"
                       />
-                      <span className="block text-[11.5px] font-semibold">{type.label}</span>
-                      <span className="mt-0.5 block text-[9.5px] leading-snug text-ink-mute">{type.note}</span>
+                      <span className="flex items-center justify-between gap-2 text-[12.5px] font-semibold">
+                        {type.label}
+                        {form.event_type === type.value ? <Check size={13} className="shrink-0 text-burgundy" aria-hidden /> : null}
+                      </span>
+                      <span className="mt-1 block text-[11px] leading-snug text-ink-soft">{type.note}</span>
                     </label>
                   ))}
                 </div>
@@ -371,8 +378,8 @@ export function EventWizard() {
                   {THEMES.map((theme) => (
                     <label
                       key={theme.value}
-                      className={`flex cursor-pointer items-start gap-2.5 border p-2.5 transition-colors ${
-                        form.theme === theme.value ? "border-burgundy bg-[#f3e9e6]" : "border-line bg-ivory hover:border-ink-mute"
+                      className={`wizard-choice flex cursor-pointer items-start gap-2.5 border p-3 transition-colors ${
+                        form.theme === theme.value ? "border-burgundy bg-[#f3e9e6]" : "border-line bg-ivory hover:border-ink-mute hover:bg-[#f5f0e5]"
                       }`}
                     >
                       <input
@@ -392,8 +399,8 @@ export function EventWizard() {
                         {form.theme === theme.value ? <Check size={9} /> : null}
                       </span>
                       <span>
-                        <span className="block text-[11.5px] font-semibold">{theme.label}</span>
-                        <span className="mt-0.5 block text-[9.5px] leading-snug text-ink-mute">{theme.note}</span>
+                        <span className="block text-[12.5px] font-semibold">{theme.label}</span>
+                        <span className="mt-1 block text-[11px] leading-snug text-ink-soft">{theme.note}</span>
                       </span>
                     </label>
                   ))}
@@ -570,32 +577,37 @@ export function EventWizard() {
         </div>
 
         <aside className="space-y-4">
-          <div className="border border-line bg-[#fbf9f3] p-4">
-            <p className="eyebrow text-[9px] text-ink-mute">Live brief</p>
-            <p className="mt-2 font-display text-[26px] leading-tight">{form.name || "Untitled occasion"}</p>
-            <p className="mt-1 text-[11.5px] text-ink-mute">
-              {labelFor(EVENT_TYPES, form.event_type)} · {form.city || "City to confirm"}
+          <div className="wizard-summary border border-line bg-[#fbf9f3] p-5 sm:p-6">
+            <p className="eyebrow text-ink-mute">Live summary</p>
+            <p className="mt-2 font-display text-[26px] leading-tight">{form.name || "Your event name"}</p>
+            <p className="mt-1 text-[12.5px] font-medium text-ink-soft">
+              {labelFor(EVENT_TYPES, form.event_type)}{form.city ? ` · ${form.city}` : " · Add a location"}
             </p>
-            <div className="mt-4 space-y-2 border-t border-line pt-3 text-[11.5px]">
-              <div className="flex justify-between"><span className="text-ink-mute">Guests</span><span>{guestCount || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-ink-mute">Budget</span><span>{budgetCents ? money(budgetCents) : "—"}</span></div>
-              <div className="flex justify-between"><span className="text-ink-mute">Per guest</span><span>{perGuest ? money(perGuest) : "—"}</span></div>
-              <div className="flex justify-between"><span className="text-ink-mute">Theme</span><span className="text-right">{titleCase(form.theme)}</span></div>
+            <div className="mt-4 space-y-0 border-t border-line pt-2 text-[12.5px]">
+              <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Date</span><span className="text-right">{form.event_date ? new Date(form.event_date).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Choose a date"}</span></div>
+              <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Guests</span><span>{guestCount || "Add guest count"}</span></div>
+              <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Budget</span><span>{budgetCents ? money(budgetCents) : "Add a budget"}</span></div>
+              <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Per guest</span><span>{perGuest ? money(perGuest) : "—"}</span></div>
+              {step > 0 ? <>
+                <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Theme</span><span className="text-right">{titleCase(form.theme)}</span></div>
+                <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Venue</span><span className="text-right">{labelFor(VENUE_TYPES, form.venue_type)}</span></div>
+                <div className="wizard-summary-row flex justify-between gap-3"><span className="text-ink-mute">Catering</span><span className="text-right">{labelFor(CATERING_LEVELS, form.catering_level)}</span></div>
+              </> : null}
             </div>
+            <p className="mt-3 border-t border-line pt-3 text-[11px] leading-relaxed text-ink-mute">Updates as you edit. Nothing is saved yet.</p>
           </div>
 
-          <div className="border border-line p-4">
-            <p className="eyebrow text-[9px] text-ink-mute">What happens next</p>
-            <ul className="mt-2.5 space-y-2.5 text-[11.5px] leading-relaxed text-ink-soft">
-              <li className="flex gap-2"><span className="font-mono text-[9px] text-burgundy">01</span> Event saved to your private workspace.</li>
-              <li className="flex gap-2"><span className="font-mono text-[9px] text-burgundy">02</span> Cost and risk models run on the saved brief.</li>
-              <li className="flex gap-2"><span className="font-mono text-[9px] text-burgundy">03</span> A structured plan is generated, or the labelled fallback planner runs.</li>
-              <li className="flex gap-2"><span className="font-mono text-[9px] text-burgundy">04</span> Checklist tasks seeded; workspace ready to edit.</li>
+          <div className="wizard-next border border-line bg-[#fbf9f3] p-5 sm:p-6">
+            <p className="eyebrow text-ink-mute">Once it’s saved</p>
+            <ul className="mt-3 space-y-3 text-[12.5px] leading-relaxed text-ink-soft">
+              <li className="flex gap-2"><span className="font-mono text-[10px] text-burgundy">01</span><span>Your private event workspace is created.</span></li>
+              <li className="flex gap-2"><span className="font-mono text-[10px] text-burgundy">02</span><span>You’ll see a cost estimate and budget risk check.</span></li>
+              <li className="flex gap-2"><span className="font-mono text-[10px] text-burgundy">03</span><span>A draft plan and starter checklist are added for you to edit.</span></li>
             </ul>
           </div>
 
-          <div className="border border-champagne bg-champagne-soft/40 p-4 text-[10.5px] leading-relaxed text-ink-soft">
-            <strong className="block text-[9px] uppercase tracking-[0.14em] text-ink-mute">Honest limits</strong>
+          <div className="wizard-limit border-l-2 border-champagne bg-[#f2eddf] px-4 py-3 text-[11.5px] leading-relaxed text-ink-soft">
+            <strong className="block text-[10px] uppercase tracking-[0.14em] text-ink-soft">Planning estimate</strong>
             <p className="mt-1.5">
               Estimates are USD planning ranges from a synthetic dataset. No vendor is contacted, no availability is
               checked, and no booking is created.

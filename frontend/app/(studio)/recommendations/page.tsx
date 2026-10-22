@@ -11,11 +11,11 @@ export default async function RecommendationsPage() {
   const events = await serverApiOrNull<EventList>("/api/events?page=1&page_size=50");
 
   return (
-    <>
+    <div className="recommendations-page">
       <PageHeader
         eyebrow="Recommendation engine"
-        title={<>Concepts, <span className="display-italic">ranked.</span></>}
-        description="A content-based NearestNeighbors model matches your event against an original 24-piece catalogue. Each concept carries a plain-language reason for surfacing — and an honest provenance label."
+        title={<>Ideas for <span className="display-italic">your event.</span></>}
+        description="Explore event ideas matched to your occasion, guest count, budget, style, and venue. Each suggestion includes why it may fit and an estimated planning cost."
       />
       <RecommendationsClient events={events?.items ?? []} />
 
@@ -27,18 +27,18 @@ export default async function RecommendationsPage() {
           </p>
         </div>
         <div>
-          <p className="eyebrow text-[9px] text-ink-mute">How</p>
-          <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-soft">
-            Style, occasion, venue, budget per guest, and capacity are vectorised and compared with cosine distance.
+          <p className="eyebrow text-[9px] text-ink-mute">How suggestions are ordered</p>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-ink-soft">
+            Event details are compared with the catalogue; closer matches appear first.
           </p>
         </div>
         <div>
-          <p className="eyebrow text-[9px] text-ink-mute">What it is not</p>
-          <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-soft">
-            Not vendor inventory, not availability, and not a booking. Prices are planning bands, not quotes.
+          <p className="eyebrow text-[9px] text-ink-mute">Before you decide</p>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-ink-soft">
+            Ideas are inspiration, not supplier availability or bookings. Cost bands are planning estimates, not quotes.
           </p>
         </div>
       </div>
-    </>
+    </div>
   );
 }

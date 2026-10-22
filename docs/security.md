@@ -77,7 +77,7 @@ References used for threat modelling: OWASP Top 10 (2025) and the OWASP API Secu
 ### Dependencies
 - Backend dependencies pinned in `backend/requirements.txt`; frontend dependencies and lockfile committed.
 - No lifecycle scripts from unknown packages were executed; Playwright used for local screenshots only and is not a project dependency.
-- Dependency audits run on 2026-10-21: `npm audit --omit=dev` → **0 vulnerabilities**; `pip-audit -r backend/requirements.txt` → **no known vulnerabilities**. Re-run both before every release; do not disable checks to make a build pass.
+- Dependency audits run on 2026-10-22: `npm audit --omit=dev` → **0 vulnerabilities**; `pip-audit -r backend/requirements.txt --no-deps --disable-pip` → **no known vulnerabilities**. Re-run both before every release; do not disable checks to make a build pass.
 
 ### Privacy
 - Data collected is limited to account email/name and planning content.
@@ -88,7 +88,7 @@ References used for threat modelling: OWASP Top 10 (2025) and the OWASP API Secu
 
 ## Tests actually performed
 
-`backend/tests/` (53 tests, all passing) covers:
+`backend/tests/` (54 collected tests; suite exited 0 on 2026-10-22) covers:
 
 - Auth flow, cookie flags, weak passwords, duplicate emails, session invalidation.
 - CSRF missing/invalid, disallowed/missing Origin.
@@ -121,9 +121,9 @@ Performed manually in this workspace:
 5. **SQLite** has limited concurrency and no row-level security. Use PostgreSQL with least-privilege credentials in production.
 6. **Synthetic ML data** limits the truthfulness of estimates. No security impact, but a product-risk caveat.
 7. **AI provider data handling** depends on the provider and account settings. Review its retention/training policy and obtain consent where required.
-8. **Default development secret** must be replaced in production; startup logs a warning but does not block boot.
+8. **Production configuration** now refuses to start with the default/short application secret, reset-token echo enabled, missing allowed origins, or a non-HTTPS allowed origin. Configure these values before deployment.
 9. **No email verification** exists, so addresses are not proven. Add verification if accounts become public.
-10. **Dependency advisories** were audited cleanly on 2026-10-21, but that is a point-in-time result; new advisories appear continuously.
+10. **Dependency advisories** were audited cleanly on 2026-10-22, but that is a point-in-time result; new advisories appear continuously.
 
 ## Production checklist
 

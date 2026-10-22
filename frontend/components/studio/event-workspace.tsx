@@ -2,6 +2,7 @@
 
 import {
   AlertTriangle,
+  ArrowDown,
   ArrowRight,
   CalendarDays,
   Check,
@@ -35,6 +36,7 @@ import type {
   NoteRecord,
   PlanRecord,
   RecommendationItem,
+  ScheduleItem,
   TaskRecord,
 } from "@/lib/types";
 
@@ -49,6 +51,36 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+
+function EventFlowchart({ items }: { items: ScheduleItem[] }) {
+  return (
+    <>
+      <p className="mb-4 text-[11.5px] leading-relaxed text-ink-mute">
+        Follow the event in order. A responsible person is shown when one is assigned.
+      </p>
+      <ol aria-label="Event-day flow" className="space-y-0">
+        {items.map((item, index) => (
+          <li key={`${item.time}-${index}`} className="grid grid-cols-[54px_20px_1fr] gap-2.5">
+            <time className="pt-3 font-mono text-[11px] font-semibold text-burgundy">{item.time}</time>
+            <span className="relative flex justify-center" aria-hidden>
+              {index < items.length - 1 ? (
+                <>
+                  <span className="absolute top-5 bottom-0 w-px bg-champagne" />
+                  <ArrowDown size={12} className="absolute bottom-0 z-10 bg-[#fbf9f3] text-burgundy" />
+                </>
+              ) : null}
+              <span className="z-10 mt-3 h-3 w-3 rounded-full border-2 border-burgundy bg-[#fbf9f3]" />
+            </span>
+            <article className="mb-3 border border-line bg-[#fbf9f3] px-3 py-2.5">
+              <h3 className="text-[12.5px] font-semibold leading-snug text-ink">{item.activity}</h3>
+              {item.owner ? <p className="mt-1 text-[10px] text-ink-mute">Lead: {item.owner}</p> : null}
+            </article>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
 
 export function EventWorkspace({
   initialEvent,
@@ -656,22 +688,12 @@ export function EventWorkspace({
                 </ol>
               </Panel>
 
-              <Panel eyebrow={`Event day · ${formatDate(event.event_date)}`} title="Run of show">
-                <ul className="divide-y divide-line/70">
-                  {plan.event_day_schedule.map((item, index) => (
-                    <li key={`${item.time}-${index}`} className="grid grid-cols-[54px_1fr] gap-3 py-2.5">
-                      <span className="font-mono text-[11px] text-burgundy">{item.time}</span>
-                      <div>
-                        <p className="text-[12px] leading-snug">{item.activity}</p>
-                        {item.owner ? <p className="text-[9.5px] uppercase tracking-[0.08em] text-ink-mute">{item.owner}</p> : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              <Panel eyebrow={`Event day · ${formatDate(event.event_date)}`} title="Event-day flow">
+                <EventFlowchart items={plan.event_day_schedule} />
               </Panel>
             </div>
           ) : (
-            <EmptyState icon={<CalendarDays size={22} aria-hidden />} title="No timeline yet." body="Generate a plan to build the preparation timeline and event-day run sheet." />
+            <EmptyState icon={<CalendarDays size={22} aria-hidden />} title="No event flow yet." body="Generate a plan to see the preparation timeline and a step-by-step event-day flowchart." />
           )
         ) : null}
 

@@ -17,15 +17,15 @@ Verified in this workspace (October 2026):
 | Landing page, auth pages, responsive navigation | Working | Screenshots + Playwright run: zero console/page errors, no horizontal overflow at 1440 px or 390 px |
 | Sign-up, sign-in, sign-out, session cookies, CSRF | Working | Backend tests; HttpOnly cookie assertions |
 | Password reset request/confirm, session invalidation | Working locally; token echo is development-only | Tests |
-| Protected event CRUD + per-user isolation | Working | 53-test suite, including cross-account read/update/delete attempts returning 404 |
+| Protected event CRUD + per-user isolation | Working | 54-test suite, including cross-account read/update/delete attempts returning 404 |
 | Random Forest cost inference | Working | Run `scripts/train_models.py`; MAE **$4,175.38**, RMSE **$5,696.98**, R² **0.9556** on a synthetic holdout split |
 | KNN recommendation engine | Working | 24-entry catalogue, cosine similarity, ranked output with reasons |
 | Decision-tree budget risk | Working | Accuracy **0.9475**, macro F1 **0.9359** on rule-labelled simulated plans |
 | Structured AI plan generation | Working when a provider key is configured; deterministic fallback always works | Fake-provider tests cover valid JSON, invalid JSON, schema violations, timeouts, and prompt injection |
 | Dashboard, charts, tasks, expenses, notes, export | Working | Loaded from real API data in the browser |
 | Frontend production build | Passing | `npm run build` (Next.js 16.4.2) |
-| Backend test suite | Passing | **53 passed** (`pytest`, Python 3.12), re-run from a clean checkout |
-| Dependency advisories | Clean at build time | `npm audit --omit=dev` → 0 vulnerabilities; `pip-audit -r backend/requirements.txt` → no known vulnerabilities (2026-10-21) |
+| Backend test suite | Passing | **54 collected; suite exits 0** (`pytest`, Python 3.12) |
+| Dependency advisories | Clean at build time | `npm audit --omit=dev` → 0 vulnerabilities; `pip-audit -r backend/requirements.txt --no-deps --disable-pip` → no known vulnerabilities (2026-10-22) |
 | GitHub repository under 10 MB | **5.7 MiB (6.0 MB) across 129 tracked files**; model binaries, dependencies, and databases are excluded | See [Repository size](#repository-size) |
 
 **Not claimed:** real vendor prices, vendor availability, bookings, market-accurate cost predictions, penetration testing, or production security certification. No third-party service is connected in this workspace.
@@ -90,7 +90,7 @@ python -m venv .venv
 .venv/bin/python backend/scripts/train_models.py                # writes backend/ml_artifacts/
 cd backend && PYTHONPATH=. ../.venv/bin/uvicorn app.main:app --reload --port 8000
 # in a second terminal, from the repository root:
-.venv/bin/python -m pytest backend/tests                        # 53 passed
+.venv/bin/python -m pytest backend/tests                        # 54 collected tests
 
 # 3. Frontend
 cd frontend
@@ -187,7 +187,7 @@ Documented residual risks and the production checklist are in [docs/security.md]
 ## Testing
 
 ```bash
-# Backend: 53 tests
+# Backend: 54 collected tests
 cd backend && PYTHONPATH=. ../.venv/bin/python -m pytest
 
 # Frontend: typecheck + production build
@@ -196,7 +196,7 @@ cd frontend && npm run typecheck && npm run build
 
 The suite covers valid/invalid event creation, CRUD, pagination, cross-account isolation on events/tasks/expenses/notes/plans/AI, CSRF and Origin rejection, oversized bodies, SQL-injection and XSS payload handling, rate limiting, CORS, security headers, password reset, account deletion, database-failure error masking, missing ML artifacts, real ML inference/metrics, AI fallback/timeout/invalid-JSON/schema-violation, prompt-injection neutralisation, and a frontend secret scan.
 
-Clean-checkout verification (2026-10-21): the tracked files were exported to an empty directory, `pip install -r backend/requirements.txt` and `npm ci` were run from scratch, models were retrained (seed 42), then `pytest` reported **53 passed** and `npm run build` completed. Re-verified on 2026-10-22 in a restored workspace with fresh `.venv` and `node_modules`: **53 passed**, `tsc --noEmit` clean, production build succeeded. There is no CI workflow in this repository.
+Clean-checkout verification (2026-10-21): the tracked files were exported to an empty directory, `pip install -r backend/requirements.txt` and `npm ci` were run from scratch, models were retrained (seed 42), then `pytest` completed and `npm run build` completed. Re-verified on 2026-10-22: **54 tests collected**, the backend suite exited 0, `tsc --noEmit` was clean, the production build succeeded, and both dependency audits were clean. GitHub Actions repeats the backend tests and audit plus frontend type check, build, and audit on pushes and pull requests.
 
 ---
 
@@ -220,7 +220,7 @@ backend/
   app/{api,auth,core,database,schemas,services,ml,ai}/
   migrations/            # Alembic initial schema
   scripts/train_models.py
-  tests/                 # 53 pytest tests
+  tests/                 # 54 collected pytest tests
   requirements.txt
 frontend/
   app/                   # landing, auth, protected studio routes, proxy
