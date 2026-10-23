@@ -46,7 +46,7 @@ Mobile landing: [docs/screenshots/mobile-landing.png](docs/screenshots/mobile-la
 
 Full-page captures: [landing](docs/screenshots/landing-full.jpg) · [dashboard](docs/screenshots/dashboard-full.jpg) · [event plan](docs/screenshots/workspace-plan-full.jpg) · [recommendations](docs/screenshots/recommendations-full.jpg) · [settings](docs/screenshots/settings-full.jpg)
 
-A demo-video placeholder and recording checklist are in [docs/demo-video.md](docs/demo-video.md). Screenshots use a synthetic demo account (`maya@eventora.test`) with invented event data.
+A reusable Playwright demo script and recording guide are in [docs/demo-video.md](docs/demo-video.md). The silent browser recording is produced on demand; no video is committed. Screenshots use a synthetic demo account (`maya@eventora.test`) with invented event data.
 
 ---
 

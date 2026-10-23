@@ -96,6 +96,8 @@ class Settings(BaseSettings):
         has_placeholder_secret = self.app_secret.startswith("dev-only") or self.app_secret == "replace-with-a-long-random-secret"
         if has_placeholder_secret or len(self.app_secret) < 32:
             raise ValueError("APP_SECRET must be a unique random value of at least 32 characters in production")
+        if self.cookie_secure is False:
+            raise ValueError("COOKIE_SECURE must be true in production")
         if self.auth_dev_reset_echo:
             raise ValueError("AUTH_DEV_RESET_ECHO must be false in production")
         if not self.allowed_origins:

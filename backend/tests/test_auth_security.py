@@ -24,10 +24,18 @@ def test_production_settings_reject_insecure_runtime_configuration():
 
     with pytest.raises(ValidationError, match="APP_SECRET"):
         Settings(**{**common, "app_secret": "dev-only-insecure-secret-change-me"})
+    with pytest.raises(ValidationError, match="COOKIE_SECURE"):
+        Settings(**{**common, "cookie_secure": False})
     with pytest.raises(ValidationError, match="AUTH_DEV_RESET_ECHO"):
         Settings(**{**common, "auth_dev_reset_echo": True})
     with pytest.raises(ValidationError, match="HTTPS origins"):
         Settings(**{**common, "frontend_origins": "http://localhost:3000"})
+    development = Settings(
+        app_env="development",
+        app_secret="local-development-secret",
+        cookie_secure=False,
+    )
+    assert development.secure_cookies is False
 
 
 def test_health_reports_status_without_secrets(client: TestClient):
@@ -216,6 +224,83 @@ def test_oauth_callback_creates_and_reuses_provider_identity(client: TestClient,
         )
         assert len(verifier) >= 43
     assert challenges == expected_challenges
+
+
+@pytest.mark.parametrize(
+    ("provider", "identity_data", "expected_params"),
+    [
+        (
+            "google",
+            {"sub": "google-sub", "email": "google@example.test", "email_verified": True, "name": "Google Planner"},
+            None,
+        ),
+        (
+            "facebook",
+            {"id": "facebook-sub", "email": "facebook@example.test", "email_verified": True, "name": "Facebook Planner"},
+            {"fields": "id,name,email"},
+        ),
+        (
+            "microsoft",
+            {"sub": "microsoft-sub", "email": "microsoft@example.test", "email_verified": True, "name": "Microsoft Planner"},
+            None,
+        ),
+    ],
+)
+def test_oauth_profile_requests_forward_access_token(
+    client: TestClient, settings, monkeypatch, provider, identity_data, expected_params, caplog
+):
+    secret = "provider-access-token-must-not-leak"
+    for name in ("google", "facebook", "microsoft"):
+        monkeypatch.setattr(settings, f"{name}_oauth_client_id", f"{name}-client")
+        monkeypatch.setattr(settings, f"{name}_oauth_client_secret", f"{name}-secret")
+    monkeypatch.setattr(settings, "oauth_frontend_url", "http://testserver")
+
+    class ProviderResponse:
+        def __init__(self, body):
+            self.body = body
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.body
+
+    class MockProviderClient:
+        def __init__(self, *, timeout):
+            assert timeout == 10.0
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, _url, *, data):
+            assert data["client_id"] == f"{provider}-client"
+            return ProviderResponse({"access_token": secret})
+
+        def get(self, _url, *, headers, params=None):
+            assert headers["Authorization"] == f"Bearer {secret}"
+            assert params == expected_params
+            return ProviderResponse(identity_data)
+
+    from app.api import routes_auth
+
+    monkeypatch.setattr(routes_auth.httpx, "Client", MockProviderClient)
+    start = client.get(f"/api/auth/oauth/{provider}", follow_redirects=False)
+    state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
+    response = client.get(
+        f"/api/auth/oauth/{provider}/callback",
+        params={"code": "provider-code", "state": state},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "http://testserver/dashboard"
+    assert secret not in response.text
+    assert secret not in response.headers.get("set-cookie", "")
+    assert secret not in caplog.text
+    assert client.get("/api/auth/me").json()["email"] == identity_data["email"]
 
 
 def test_oauth_callback_does_not_link_unverified_email(client: TestClient, settings, monkeypatch):

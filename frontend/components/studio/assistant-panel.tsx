@@ -50,7 +50,10 @@ export function AssistantPanel({ event, plan }: { event: EventRecord; plan: Even
         ...current,
         { role: "assistant", content: response.reply, engine: response.engine, warnings: response.warnings },
       ]);
-      requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+      requestAnimationFrame(() => {
+        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+        endRef.current?.scrollIntoView({ behavior, block: "nearest" });
+      });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "The assistant could not answer. Please retry.");
       setMessages((current) => current.slice(0, -1));
@@ -71,7 +74,13 @@ export function AssistantPanel({ event, plan }: { event: EventRecord; plan: Even
         </span>
       </div>
 
-      <div className="max-h-[420px] space-y-4 overflow-y-auto scroll-slim p-4">
+      <div
+        className="max-h-[420px] space-y-4 overflow-y-auto scroll-slim p-4"
+        role="log"
+        aria-label="Assistant conversation"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
         {messages.map((message, index) => (
           <div key={index} className={message.role === "user" ? "flex justify-end" : ""}>
             <div

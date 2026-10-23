@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Response, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session as OrmSession
 
 from app.api.common import serialize_event
@@ -21,64 +21,100 @@ def dashboard(
     user: User = Depends(get_current_user),
 ) -> dict:
     now = datetime.now(UTC)
-    events = db.execute(select(Event).where(Event.user_id == user.id).order_by(Event.event_date.asc())).scalars().all()
-
-    def as_aware(value: datetime) -> datetime:
-        return value if value.tzinfo else value.replace(tzinfo=UTC)
-
-    upcoming = [e for e in events if as_aware(e.event_date) >= now][:4]
-    recent = sorted(events, key=lambda e: as_aware(e.created_at), reverse=True)[:4]
-    total_budget = sum(e.budget_cents for e in events)
-
-    expenses = db.execute(
-        select(Expense).join(Event, Expense.event_id == Event.id).where(Event.user_id == user.id)
+    event_count, total_budget, upcoming_count = db.execute(
+        select(
+            func.count(Event.id),
+            func.coalesce(func.sum(Event.budget_cents), 0),
+            func.coalesce(func.sum(case((Event.event_date >= now, 1), else_=0)), 0),
+        ).where(Event.user_id == user.id)
+    ).one()
+    upcoming = db.execute(
+        select(Event)
+        .where(Event.user_id == user.id, Event.event_date >= now)
+        .order_by(Event.event_date.asc())
+        .limit(4)
     ).scalars().all()
-    total_expenses = sum(e.amount_cents for e in expenses)
-
-    tasks = db.execute(
-        select(Task).join(Event, Task.event_id == Event.id).where(Event.user_id == user.id)
+    recent = db.execute(
+        select(Event).where(Event.user_id == user.id).order_by(Event.created_at.desc()).limit(4)
     ).scalars().all()
-    open_tasks = [t for t in tasks if not t.done]
+    chart_events = db.execute(
+        select(Event).where(Event.user_id == user.id).order_by(Event.event_date.asc()).limit(6)
+    ).scalars().all()
+
+    total_expenses = db.execute(
+        select(func.coalesce(func.sum(Expense.amount_cents), 0))
+        .join(Event, Expense.event_id == Event.id)
+        .where(Event.user_id == user.id)
+    ).scalar_one()
+    open_task_count, done_task_count = db.execute(
+        select(
+            func.coalesce(func.sum(case((Task.done.is_(False), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((Task.done.is_(True), 1), else_=0)), 0),
+        )
+        .join(Event, Task.event_id == Event.id)
+        .where(Event.user_id == user.id)
+    ).one()
 
     risk_distribution = {"low": 0, "medium": 0, "high": 0, "unassessed": 0}
-    occasion_distribution: dict[str, int] = {}
-    for event in events:
-        key = event.risk_level if event.risk_level in risk_distribution else "unassessed"
-        risk_distribution[key] += 1
-        occasion_distribution[event.event_type] = occasion_distribution.get(event.event_type, 0) + 1
+    for risk_level, count in db.execute(
+        select(Event.risk_level, func.count(Event.id))
+        .where(Event.user_id == user.id)
+        .group_by(Event.risk_level)
+    ):
+        key = risk_level if risk_level in risk_distribution else "unassessed"
+        risk_distribution[key] += count
+    occasion_distribution = dict(
+        db.execute(
+            select(Event.event_type, func.count(Event.id))
+            .where(Event.user_id == user.id)
+            .group_by(Event.event_type)
+        ).all()
+    )
 
-    plan_rows = db.execute(
-        select(Plan, Event)
+    plans_generated = db.execute(
+        select(func.count(Plan.id))
         .join(Event, Plan.event_id == Event.id)
         .where(Event.user_id == user.id)
-        .order_by(Plan.created_at.desc())
-        .limit(24)
+    ).scalar_one()
+    ranked_plans = (
+        select(
+            Plan.id.label("plan_id"),
+            func.row_number()
+            .over(partition_by=Plan.event_id, order_by=(Plan.created_at.desc(), Plan.id.desc()))
+            .label("plan_rank"),
+        )
+        .subquery()
+    )
+    plans = db.execute(
+        select(Plan, Event)
+        .join(ranked_plans, Plan.id == ranked_plans.c.plan_id)
+        .join(Event, Plan.event_id == Event.id)
+        .where(Event.user_id == user.id, ranked_plans.c.plan_rank == 1)
+        .order_by(Plan.created_at.desc(), Plan.id.desc())
+        .limit(4)
     ).all()
-    plans = []
-    seen_events: set[str] = set()
-    for plan, event in plan_rows:
-        if plan.event_id in seen_events:
-            continue
-        seen_events.add(plan.event_id)
-        plans.append((plan, event))
-        if len(plans) == 4:
-            break
 
-    event_names = {e.id: e.name for e in events}
-    upcoming_tasks = sorted(
-        open_tasks,
-        key=lambda t: (t.due_date is None, t.due_date or now.date(), t.created_at),
-    )[:6]
+    upcoming_tasks = db.execute(
+        select(Task, Event.name)
+        .join(Event, Task.event_id == Event.id)
+        .where(Event.user_id == user.id, Task.done.is_(False))
+        .order_by(
+            case((Task.due_date.is_(None), 1), else_=0),
+            Task.due_date.asc(),
+            Task.created_at.asc(),
+        )
+        .limit(6)
+    ).all()
 
     return {
         "stats": {
-            "event_count": len(events),
-            "upcoming_count": len([e for e in events if as_aware(e.event_date) >= now]),
+            "event_count": event_count,
+            "upcoming_count": upcoming_count,
             "total_budget_cents": total_budget,
             "total_expenses_cents": total_expenses,
-            "tasks_open": len(open_tasks),
-            "tasks_done": len(tasks) - len(open_tasks),
-            "plans_generated": len(plans),
+            "tasks_open": open_task_count,
+            "tasks_done": done_task_count,
+            "plans_generated": plans_generated,
         },
         "upcoming": [EventOut(**serialize_event(e)).model_dump(mode="json") for e in upcoming],
         "recent": [EventOut(**serialize_event(e)).model_dump(mode="json") for e in recent],
@@ -91,12 +127,12 @@ def dashboard(
             {
                 "id": t.id,
                 "event_id": t.event_id,
-                "event_name": event_names.get(t.event_id, "Event"),
+                "event_name": event_name,
                 "title": t.title,
                 "due_date": t.due_date.isoformat() if t.due_date else None,
                 "category": t.category,
             }
-            for t in upcoming_tasks
+            for t, event_name in upcoming_tasks
         ],
         "recent_plans": [
             {
@@ -114,7 +150,7 @@ def dashboard(
                 "budget": round(e.budget_cents / 100, 2),
                 "estimated": round((e.predicted_cost_cents or 0) / 100, 2),
             }
-            for e in events[:6]
+            for e in chart_events
         ],
     }
 

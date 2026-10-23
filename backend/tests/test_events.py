@@ -209,6 +209,75 @@ def test_dashboard_aggregates_only_own_records(account: Account, other_account: 
     assert len(dashboard["budget_chart"]) == 1
 
 
+def test_dashboard_counts_all_plan_records_across_events(account: Account):
+    event_ids = [
+        account.create_event(name=f"Planned event {index}")["id"]
+        for index in range(5)
+    ]
+    for event_id in event_ids:
+        response = account.client.post(
+            "/api/ai/generate-plan",
+            json={"event_id": event_id},
+            headers=account.headers(),
+        )
+        assert response.status_code == 200
+    revision = account.client.post(
+        "/api/ai/generate-plan",
+        json={"event_id": event_ids[0], "revision_notes": "Adjust the schedule."},
+        headers=account.headers(),
+    )
+    assert revision.status_code == 200
+
+    dashboard = account.client.get("/api/dashboard").json()
+    assert dashboard["stats"]["plans_generated"] == 6
+    assert len(dashboard["recent_plans"]) == 4
+    assert len({plan["event_id"] for plan in dashboard["recent_plans"]}) == 4
+
+
+def test_dashboard_database_aggregates_preserve_task_order(account: Account):
+    first = account.create_event(name="First dashboard event", budget_cents=2_000_000)
+    second = account.create_event(name="Second dashboard event", budget_cents=3_000_000)
+    for event, amount in ((first, 125_000), (second, 200_000)):
+        response = account.client.post(
+            f"/api/events/{event['id']}/expenses",
+            json={"label": "Deposit", "amount_cents": amount},
+            headers=account.headers(),
+        )
+        assert response.status_code == 201
+
+    def create_task(event_id: str, title: str, due_date: str | None = None) -> dict:
+        response = account.client.post(
+            f"/api/events/{event_id}/tasks",
+            json={"title": title, "category": "general", "due_date": due_date},
+            headers=account.headers(),
+        )
+        assert response.status_code == 201
+        return response.json()
+
+    create_task(first["id"], "No due date")
+    create_task(second["id"], "Later", "2027-08-01")
+    create_task(first["id"], "Soon", "2027-01-01")
+    completed = create_task(second["id"], "Completed", "2026-12-01")
+    assert account.client.patch(
+        f"/api/events/{second['id']}/tasks/{completed['id']}",
+        json={"done": True},
+        headers=account.headers(),
+    ).status_code == 200
+
+    dashboard = account.client.get("/api/dashboard").json()
+    assert dashboard["stats"]["event_count"] == 2
+    assert dashboard["stats"]["total_budget_cents"] == 5_000_000
+    assert dashboard["stats"]["total_expenses_cents"] == 325_000
+    assert dashboard["stats"]["tasks_open"] == 3
+    assert dashboard["stats"]["tasks_done"] == 1
+    assert [task["title"] for task in dashboard["tasks"]] == ["Soon", "Later", "No due date"]
+    assert [task["event_name"] for task in dashboard["tasks"]] == [
+        "First dashboard event",
+        "Second dashboard event",
+        "First dashboard event",
+    ]
+
+
 def test_export_and_data_deletion(account: Account):
     event = account.create_event()
     account.client.post(

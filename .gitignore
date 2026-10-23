@@ -1,6 +1,7 @@
 # Dependencies and build output
 node_modules/
 frontend/.next/
+frontend/.next-demo/
 frontend/out/
 dist/
 build/
@@ -49,4 +50,5 @@ Thumbs.db
 playwright-report/
 test-results/
 artifacts/logs/
+artifacts/demo/
 *.log

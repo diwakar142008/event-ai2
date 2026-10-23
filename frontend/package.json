@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
+    "dev:demo": "next dev -H 127.0.0.1 -p 3001",
+    "demo": "node scripts/demo.mjs",
+    "test:e2e": "node scripts/e2e-event-crud.mjs",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "typecheck": "tsc --noEmit"
@@ -21,7 +24,8 @@
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.5",
-    "postcss": "8.5.6",
+    "playwright": "^1.64.1",
+    "postcss": "8.5.31",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3"
   }

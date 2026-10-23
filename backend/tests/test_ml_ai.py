@@ -3,12 +3,50 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from app.ai.provider import AIProviderError, LLMResponse
 from app.ml.service import MLEngine, ModelNotTrained
 from tests.conftest import Account
+
+
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_ai_provider_sends_bearer_key_and_handles_rejection(monkeypatch, status_code, caplog):
+    from app.ai import provider as ai_provider
+
+    secret = "ai-provider-test-key-never-log"
+    captured_authorization = []
+    transport = httpx.MockTransport(
+        lambda request: (
+            captured_authorization.append(request.headers["Authorization"])
+            or httpx.Response(status_code, json={"error": "rejected"})
+        )
+    )
+    http_client = httpx.Client
+
+    class Settings:
+        ai_base_url = "https://provider.example.test/v1"
+        ai_api_key = secret
+        ai_model = "test-model"
+        ai_timeout_seconds = 5
+        ai_max_output_tokens = 100
+
+    monkeypatch.setattr(ai_provider, "get_settings", lambda: Settings())
+    monkeypatch.setattr(
+        ai_provider.httpx,
+        "Client",
+        lambda *, timeout: http_client(transport=transport, timeout=timeout),
+    )
+
+    with pytest.raises(AIProviderError) as error:
+        ai_provider.OpenAICompatibleProvider().complete(system="system", user="user")
+
+    assert captured_authorization == [f"Bearer {secret}"]
+    assert error.value.retryable is False
+    assert secret not in str(error.value)
+    assert secret not in caplog.text
 
 
 def valid_plan(budget_cents: int = 3_800_000) -> dict:
