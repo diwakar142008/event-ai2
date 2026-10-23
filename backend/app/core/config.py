@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     cookie_secure: bool | None = None  # inferred from app_env when unset
     app_secret: str = "dev-only-insecure-secret-change-me"
     auth_dev_reset_echo: bool = True  # local development only
+    oauth_frontend_url: str = "http://localhost:3000"
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+    facebook_oauth_client_id: str = ""
+    facebook_oauth_client_secret: str = ""
+    microsoft_oauth_client_id: str = ""
+    microsoft_oauth_client_secret: str = ""
 
     # --- Request limits --------------------------------------------------
     max_request_bytes: int = 512_000
@@ -95,6 +102,12 @@ class Settings(BaseSettings):
             raise ValueError("FRONTEND_ORIGINS must contain at least one HTTPS origin in production")
         if any(not origin.startswith("https://") for origin in self.allowed_origins):
             raise ValueError("FRONTEND_ORIGINS must use HTTPS origins in production")
+        oauth_configured = any(
+            client_id or client_secret
+            for client_id, client_secret in self.oauth_providers.values()
+        )
+        if oauth_configured and not self.oauth_frontend_url.startswith("https://"):
+            raise ValueError("OAUTH_FRONTEND_URL must use HTTPS in production")
         return self
 
     @property
@@ -114,6 +127,14 @@ class Settings(BaseSettings):
     @property
     def ai_configured(self) -> bool:
         return self.ai_provider != "none" and bool(self.ai_api_key.strip())
+
+    @property
+    def oauth_providers(self) -> dict[str, tuple[str, str]]:
+        return {
+            "google": (self.google_oauth_client_id, self.google_oauth_client_secret),
+            "facebook": (self.facebook_oauth_client_id, self.facebook_oauth_client_secret),
+            "microsoft": (self.microsoft_oauth_client_id, self.microsoft_oauth_client_secret),
+        }
 
     @property
     def artifacts_path(self) -> Path:

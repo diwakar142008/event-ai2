@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
+import { ProviderSignInButtons } from "@/components/auth/provider-sign-in-buttons";
 import { api, ApiError } from "@/lib/client";
 import type { AuthSession } from "@/lib/types";
 
@@ -32,36 +33,41 @@ export function SignInForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4" noValidate>
-      <TextField
-        id="email"
-        label="Email"
-        type="email"
-        autoComplete="email"
-        required
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder="you@studio.com"
-      />
-      <TextField
-        id="password"
-        label="Password"
-        type="password"
-        autoComplete="current-password"
-        required
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        placeholder="••••••••••"
-      />
-      {error ? (
-        <p role="alert" className="border-l-2 border-danger bg-[#f6e9e6] px-3 py-2 text-[12.5px] text-danger">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
-        {loading ? "Signing in" : "Enter the studio"}
-      </Button>
-    </form>
+    <div className="space-y-5">
+      <ProviderSignInButtons returnTo="sign-in" />
+      <div className="auth-divider"><span>or sign in with email</span></div>
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        <TextField
+          id="email"
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@example.com"
+        />
+        <TextField
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Enter your password"
+        />
+        {error ? (
+          <p role="alert" className="border-l-2 border-danger bg-[#f6e9e6] px-3 py-2 text-[12.5px] text-danger">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" disabled={loading} className="auth-submit-button w-full">
+          {loading ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+          {loading ? "Signing in" : "Sign in to your workspace"}
+        </Button>
+        <p className="auth-form-assurance">Your saved events and plans are protected by secure, private sessions.</p>
+      </form>
+    </div>
   );
 }

@@ -13,6 +13,7 @@ export default async function ResetPasswordPage({
   const { token } = await searchParams;
   return (
     <AuthShell
+      mode="sign-in"
       eyebrow="Account recovery"
       title={<>Choose a new <span className="display-italic">password.</span></>}
       subtitle="This invalidates every existing session for the account."

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 import { Mark } from "@/components/ui/logo";
 
@@ -7,70 +8,83 @@ export function AuthShell({
   eyebrow,
   title,
   subtitle,
+  mode,
   children,
   footer,
 }: {
   eyebrow: string;
   title: ReactNode;
   subtitle: string;
+  mode: "sign-in" | "sign-up";
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const returning = mode === "sign-in";
+
   return (
-    <main id="main" className="grid min-h-screen grid-cols-1 lg:grid-cols-[0.92fr_1.08fr]">
-      <aside className="relative hidden overflow-hidden bg-burgundy px-12 py-10 text-ivory lg:flex lg:flex-col lg:justify-between">
-        <div className="grain absolute inset-0" aria-hidden />
-        <div className="relative z-10 flex items-center gap-2.5">
+    <main id="main" className="auth-layout">
+      <aside className="auth-visual">
+        <Image
+          src="/images/wedding.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1024px) 48vw, 100vw"
+          className="auth-visual-image"
+        />
+        <div className="auth-visual-overlay" aria-hidden="true" />
+        <Link href="/" className="auth-brand">
           <Mark className="h-7 w-7" />
-          <span className="font-display text-[24px]">Eventora AI</span>
-        </div>
-        <div className="relative z-10 max-w-[24ch]">
-          <p className="eyebrow text-[9px] text-champagne-soft">The editorial event atelier</p>
-          <p className="mt-5 font-display text-[clamp(2.2rem,3.4vw,3.2rem)] leading-[1.02]">
-            “The plan is a promise you can keep.”
+          <span>Eventora <i>AI</i></span>
+        </Link>
+        <div className="auth-visual-copy">
+          <p className="auth-eyebrow">The celebration, thoughtfully planned</p>
+          <h2>{returning ? "A little more room for the moments that matter." : "Give your next celebration a beautiful beginning."}</h2>
+          <p>
+            Bring the details, decisions, and people together in one calm planning space.
+            Your ideas stay yours; the tools help you move them forward.
           </p>
-          <p className="mt-6 max-w-[32ch] text-[12.5px] leading-relaxed text-[#e7d9db]">
-            Cost intelligence, a recommendation engine, budget-risk triage, and a schema-validated planning
-            assistant — in one private workspace.
-          </p>
+          <ul>
+            {(returning
+              ? ["Pick up where your plans left off", "Keep every event in one private space", "Make the next decision with clarity"]
+              : ["Start with a brief that feels like you", "Turn ideas into an editable event plan", "Keep timelines and budgets close at hand"]
+            ).map((item, index) => (
+              <li key={item}>
+                <span>0{index + 1}</span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="relative z-10 grid grid-cols-3 gap-4 border-t border-ivory/20 pt-5">
-          {[
-            ["Models", "03 trained"],
-            ["Data", "Your events"],
-            ["AI", "Optional"],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-champagne-soft">{label}</p>
-              <p className="mt-1 text-[12.5px]">{value}</p>
-            </div>
-          ))}
-        </div>
+        <p className="auth-visual-caption">PLAN WITH INTENTION <span>·</span> CELEBRATE WITH EASE</p>
       </aside>
 
-      <section className="flex min-h-screen flex-col px-5 py-7 sm:px-10 lg:px-16">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 lg:hidden">
+      <section className="auth-main">
+        <header className="auth-topbar">
+          <Link href="/" className="auth-mobile-brand">
             <Mark className="h-6 w-6" />
-            <span className="font-display text-[21px]">Eventora AI</span>
+            <span>Eventora <i>AI</i></span>
           </Link>
-          <Link href="/" className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-mute hover:text-burgundy">
-            Back to studio
-          </Link>
+          <span className="auth-topbar-note">{returning ? "YOUR PRIVATE EVENT SPACE" : "A PRIVATE SPACE TO BEGIN"}</span>
+          <Link href="/" className="auth-back-link">Back to Eventora <span aria-hidden="true">↗</span></Link>
+        </header>
+
+        <div className="auth-content">
+          <div className="auth-heading">
+            <span className="auth-step-badge">{returning ? "WELCOME BACK" : "YOUR WORKSPACE, YOUR WAY"}</span>
+            <p className="eyebrow text-burgundy">{eyebrow}</p>
+            <h1 className="display">{title}</h1>
+            <p className="auth-subtitle">{subtitle}</p>
+          </div>
+          <div className="auth-form-card">{children}</div>
+          {footer ? <div className="auth-footer">{footer}</div> : null}
+          <p className="auth-privacy-note">
+            <span aria-hidden="true">✦</span>
+            Your event details stay in your private workspace.
+          </p>
         </div>
 
-        <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col justify-center py-10">
-          <p className="eyebrow text-burgundy">{eyebrow}</p>
-          <h1 className="display mt-3 text-[clamp(2.4rem,4.6vw,3.4rem)]">{title}</h1>
-          <p className="mt-3 text-[13.5px] leading-relaxed text-ink-soft">{subtitle}</p>
-          <div className="mt-8">{children}</div>
-          {footer ? <div className="mt-6 text-[12.5px] text-ink-mute">{footer}</div> : null}
-        </div>
-
-        <p className="mx-auto w-full max-w-[430px] text-[10.5px] leading-relaxed text-ink-mute">
-          Self-hosted session authentication with Argon2id hashing and HttpOnly cookies. Review the security
-          notes before deploying with real accounts.
-        </p>
+        <p className="auth-legal">Secure account access <span>·</span> Eventora AI</p>
       </section>
     </main>
   );

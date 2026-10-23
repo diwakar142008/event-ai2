@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import hashlib
+from urllib.parse import parse_qs, urlsplit
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -80,6 +84,190 @@ def test_session_cookie_is_httponly_and_csrf_is_readable(client: TestClient):
     assert "HttpOnly" not in csrf_cookie
     assert "SameSite=lax" in session_cookie
     assert raw is not None
+
+
+def test_oauth_provider_status_never_exposes_credentials(client: TestClient, settings, monkeypatch):
+    monkeypatch.setattr(settings, "google_oauth_client_id", "google-client")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "google-secret")
+    response = client.get("/api/auth/oauth/providers")
+    assert response.status_code == 200
+    assert response.json() == {
+        "providers": {
+            "google": {"enabled": True},
+            "facebook": {"enabled": False},
+            "microsoft": {"enabled": False},
+        }
+    }
+    assert "google-secret" not in response.text
+
+
+def test_oauth_start_uses_pkce_and_browser_bound_state(client: TestClient, settings, monkeypatch):
+    monkeypatch.setattr(settings, "google_oauth_client_id", "google-client")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "google-secret")
+    monkeypatch.setattr(settings, "oauth_frontend_url", "http://testserver")
+
+    response = client.get(
+        "/api/auth/oauth/google?return_to=sign-up",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    authorization_url = urlsplit(response.headers["location"])
+    params = parse_qs(authorization_url.query)
+    assert authorization_url.netloc == "accounts.google.com"
+    assert params["client_id"] == ["google-client"]
+    assert params["redirect_uri"] == [
+        "http://testserver/api/backend/auth/oauth/google/callback"
+    ]
+    assert params["code_challenge_method"] == ["S256"]
+    assert len(params["code_challenge"][0]) == 43
+    state_cookie = next(cookie for cookie in response.headers.get_list("set-cookie") if cookie.startswith("eventora_oauth_google="))
+    assert "HttpOnly" in state_cookie
+    assert "SameSite=lax" in state_cookie
+
+    state = params["state"][0]
+    challenge_cookie = response.cookies["eventora_oauth_google"]
+    with TestClient(client.app, base_url="http://testserver") as other_browser:
+        callback = other_browser.get(
+            "/api/auth/oauth/google/callback",
+            params={"state": state},
+            follow_redirects=False,
+        )
+    assert callback.status_code == 303
+    assert "oauth_error=invalid_state" in callback.headers["location"]
+    assert challenge_cookie
+
+
+def test_oauth_callback_creates_and_reuses_provider_identity(client: TestClient, settings, monkeypatch):
+    monkeypatch.setattr(settings, "google_oauth_client_id", "google-client")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "google-secret")
+    monkeypatch.setattr(settings, "oauth_frontend_url", "http://testserver")
+    token_requests: list[dict[str, str]] = []
+    challenges: list[str] = []
+
+    class ProviderResponse:
+        def __init__(self, body):
+            self.body = body
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.body
+
+    class MockProviderClient:
+        def __init__(self, *, timeout):
+            assert timeout == 10.0
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, _url, *, data):
+            token_requests.append(data)
+            return ProviderResponse({"access_token": "provider-access-token"})
+
+        def get(self, _url, *, headers, params=None):
+            assert headers["Authorization"] == "Bearer provider-access-token"
+            assert params is None
+            return ProviderResponse(
+                {
+                    "sub": "google-subject-123",
+                    "email": "social@example.test",
+                    "email_verified": True,
+                    "name": "Social Planner",
+                }
+            )
+
+    from app.api import routes_auth
+
+    monkeypatch.setattr(routes_auth.httpx, "Client", MockProviderClient)
+
+    def finish_login():
+        start = client.get("/api/auth/oauth/google", follow_redirects=False)
+        params = parse_qs(urlsplit(start.headers["location"]).query)
+        state = params["state"][0]
+        challenges.append(params["code_challenge"][0])
+        response = client.get(
+            "/api/auth/oauth/google/callback",
+            params={"code": "provider-code", "state": state},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == "http://testserver/dashboard"
+        assert response.cookies.get("eventora_session")
+        return client.get("/api/auth/me").json()
+
+    first_user = finish_login()
+    second_user = finish_login()
+
+    assert first_user["email"] == "social@example.test"
+    assert second_user["id"] == first_user["id"]
+    assert len(token_requests) == 2
+    expected_challenges = []
+    for request_data in token_requests:
+        verifier = request_data["code_verifier"]
+        expected_challenges.append(
+            base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+            .rstrip(b"=")
+            .decode()
+        )
+        assert len(verifier) >= 43
+    assert challenges == expected_challenges
+
+
+def test_oauth_callback_does_not_link_unverified_email(client: TestClient, settings, monkeypatch):
+    Account(client, "existing@example.test", "Existingpass2026!")
+    monkeypatch.setattr(settings, "google_oauth_client_id", "google-client")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "google-secret")
+    monkeypatch.setattr(settings, "oauth_frontend_url", "http://testserver")
+
+    class ProviderResponse:
+        def __init__(self, body):
+            self.body = body
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.body
+
+    class MockProviderClient:
+        def __init__(self, *, timeout):
+            assert timeout == 10.0
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, _url, *, data):
+            return ProviderResponse({"access_token": "provider-access-token"})
+
+        def get(self, _url, *, headers, params=None):
+            return ProviderResponse(
+                {
+                    "sub": "unverified-google-subject",
+                    "email": "existing@example.test",
+                    "name": "Impostor",
+                }
+            )
+
+    from app.api import routes_auth
+
+    monkeypatch.setattr(routes_auth.httpx, "Client", MockProviderClient)
+    start = client.get("/api/auth/oauth/google", follow_redirects=False)
+    state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
+    response = client.get(
+        "/api/auth/oauth/google/callback",
+        params={"code": "provider-code", "state": state},
+        follow_redirects=False,
+    )
+    assert "oauth_error=account_conflict" in response.headers["location"]
+    assert client.get("/api/auth/me").json()["email"] == "existing@example.test"
 
 
 def test_signup_rejects_weak_input_and_duplicate_email(client: TestClient):

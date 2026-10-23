@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "Reset password", robots: { index: fa
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
+      mode="sign-in"
       eyebrow="Account recovery"
       title={<>Reset the <span className="display-italic">key.</span></>}
       subtitle="Request a single-use reset token. The response is identical whether or not the address is registered."

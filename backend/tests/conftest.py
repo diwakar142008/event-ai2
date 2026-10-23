@@ -39,6 +39,8 @@ from app.database.models import (  # noqa: E402
     Event,
     Expense,
     Note,
+    OAuthIdentity,
+    OAuthLoginAttempt,
     PasswordResetToken,
     Plan,
     RateLimitBucket,
@@ -64,7 +66,19 @@ def _create_schema():
 @pytest.fixture(autouse=True)
 def clean_database():
     with engine.begin() as connection:
-        for model in (RateLimitBucket, Note, Expense, Task, Plan, PasswordResetToken, AuthSession, Event, User):
+        for model in (
+            RateLimitBucket,
+            Note,
+            Expense,
+            Task,
+            Plan,
+            OAuthLoginAttempt,
+            OAuthIdentity,
+            PasswordResetToken,
+            AuthSession,
+            Event,
+            User,
+        ):
             connection.execute(model.__table__.delete())
     yield
 

@@ -106,25 +106,13 @@ export default async function DashboardPage() {
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-ivory">What are you planning?</p>
               <p className="text-[10px] text-ivory/90">Choose an occasion to start your brief</p>
             </div>
-            <div className="occasion-ticker dashboard-occasion-ticker" role="group" aria-label="Start planning by occasion">
-              <div className="occasion-ticker-track">
-                {[false, true].map((duplicate) => (
-                  <div className="occasion-ticker-group" aria-hidden={duplicate || undefined} key={duplicate ? "duplicate" : "links"}>
-                    {occasions.map(([label, type], index) => (
-                      <span className="occasion-ticker-entry" key={type}>
-                        {duplicate ? (
-                          <span className="occasion-ticker-item">{label}</span>
-                        ) : (
-                          <Link className="occasion-ticker-item" href={`/events/new?type=${type}`}>
-                            {label}
-                          </Link>
-                        )}
-                        {index < occasions.length - 1 ? <span className="occasion-ticker-dot" aria-hidden>·</span> : null}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
+            <div className="dashboard-occasion-grid" role="group" aria-label="Start planning by occasion">
+              {occasions.map(([label, type]) => (
+                <Link className="dashboard-occasion-link" href={`/events/new?type=${type}`} key={type}>
+                  <span>{label}</span>
+                  <ArrowRight size={13} aria-hidden />
+                </Link>
+              ))}
             </div>
           </section>
           <div className="dashboard-empty-reveal">

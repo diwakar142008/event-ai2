@@ -9,9 +9,10 @@ export const metadata: Metadata = { title: "Create account", robots: { index: fa
 export default function SignUpPage() {
   return (
     <AuthShell
-      eyebrow="Open the atelier"
-      title={<>Start with a <span className="display-italic">brief.</span></>}
-      subtitle="Create a private workspace. Your events, plans, and notes are visible only to your account."
+      mode="sign-up"
+      eyebrow="Your next occasion starts here"
+      title={<>Make room for <span className="display-italic">the good.</span></>}
+      subtitle="Create your private workspace and bring every celebration from first idea to final detail."
       footer={
         <p>
           Already have an account?{" "}

@@ -109,6 +109,31 @@ AI_MODEL=gpt-4o-mini
 
 OpenAPI docs are available at `http://127.0.0.1:8000/docs` outside production. Do **not** commit `.env` or any key.
 
+### Google, Facebook, and Microsoft sign-in
+
+Social sign-in is optional. Create OAuth applications with each provider and set
+the corresponding client ID and client secret in the server-side `.env` file.
+Never expose a client secret through a `NEXT_PUBLIC_` variable or commit it.
+Set `OAUTH_FRONTEND_URL` to the exact public frontend origin; OAuth callbacks
+must use these exact URLs:
+
+```text
+http://localhost:3000/api/backend/auth/oauth/google/callback
+http://localhost:3000/api/backend/auth/oauth/facebook/callback
+http://localhost:3000/api/backend/auth/oauth/microsoft/callback
+```
+
+Use the same paths with the production HTTPS origin when deploying. Provider
+buttons are enabled only when both credentials for that provider are configured.
+The backend uses one-time, browser-bound state, PKCE where supported, short-lived
+login attempts, and the app's existing HttpOnly session cookies. Apply the OAuth
+identity migration before deploying with `AUTO_CREATE_TABLES=false`:
+
+```bash
+cd backend
+PYTHONPATH=. ../.venv/bin/alembic upgrade head
+```
+
 ### Training artifacts
 
 `backend/ml_artifacts/` is intentionally gitignored. Training is deterministic (seed 42) and takes a few seconds; the Random Forest artifact is roughly 9 MB. If artifacts are absent the API returns a clear `503` for inference and reports `trained: false` in `/api/ml/metrics` rather than inventing predictions.
@@ -146,6 +171,9 @@ Checked-in metric snapshots: [docs/metrics/](docs/metrics/). Risk labels come fr
 | GET | `/api/config/status` | – | Non-sensitive configuration status |
 | POST | `/api/auth/signup` | – | 201 + session cookies; Argon2id |
 | POST | `/api/auth/signin` | – | Generic invalid-credentials message |
+| GET | `/api/auth/oauth/providers` | – | Configured social sign-in options; no secrets |
+| GET | `/api/auth/oauth/{provider}` | – | Start Google, Facebook, or Microsoft sign-in |
+| GET | `/api/auth/oauth/{provider}/callback` | – | Validate provider response and create the app session |
 | GET | `/api/auth/me` | Cookie | Current user |
 | POST | `/api/auth/signout` | Cookie + CSRF | Revokes current session |
 | POST | `/api/auth/password-reset/request` | – | Always 202; dev-only token echo |

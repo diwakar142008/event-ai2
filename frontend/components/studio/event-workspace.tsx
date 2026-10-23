@@ -43,6 +43,7 @@ import type {
 const TABS = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "plan", label: "Plan", icon: Sparkles },
+  { key: "reception", label: "Reception", icon: CalendarDays },
   { key: "timeline", label: "Timeline", icon: CalendarDays },
   { key: "checklist", label: "Checklist", icon: ListChecks },
   { key: "budget", label: "Budget", icon: Wallet },
@@ -51,6 +52,17 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+
+const RECEPTION_CHECKLIST = [
+  "Confirm reception venue access and room layout",
+  "Approve table plan and guest seating",
+  "Confirm final guest count and dietary requirements",
+  "Confirm menu, drinks, and service timing",
+  "Share speeches and key moments with the host",
+  "Confirm music, sound check, and first dance",
+  "Coordinate vendor arrival and setup times",
+  "Prepare a day-of contact sheet and emergency kit",
+];
 
 function EventFlowchart({ items }: { items: ScheduleItem[] }) {
   return (
@@ -251,6 +263,34 @@ export function EventWorkspace({
       setNotice("Task added.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "The task could not be added.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function addReceptionChecklist() {
+    const existingTitles = new Set(tasks.map((task) => task.title.toLocaleLowerCase()));
+    const missingItems = RECEPTION_CHECKLIST.filter((title) => !existingTitles.has(title.toLocaleLowerCase()));
+    if (!missingItems.length) {
+      setNotice("Your reception checklist is already up to date.");
+      return;
+    }
+
+    setBusy("reception-checklist");
+    setError(null);
+    let added = 0;
+    try {
+      for (const title of missingItems) {
+        const created = await api<TaskRecord>(`/events/${event.id}/tasks`, {
+          method: "POST",
+          body: { title, category: "reception", due_date: null },
+        });
+        setTasks((current) => [...current, created]);
+        added += 1;
+      }
+      setNotice(`${added} reception ${added === 1 ? "task" : "tasks"} added to your checklist.`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "The reception checklist could not be added completely.");
     } finally {
       setBusy(null);
     }
@@ -697,6 +737,121 @@ export function EventWorkspace({
           )
         ) : null}
 
+        {tab === "reception" ? (
+          <div className="space-y-5">
+            <section className="grid gap-4 border border-line bg-[#fbf9f3] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
+              <div>
+                <p className="eyebrow text-burgundy">The celebration, thoughtfully paced</p>
+                <h2 className="mt-1 font-display text-[26px]">Reception planning</h2>
+                <p className="mt-2 max-w-[62ch] text-[12px] leading-relaxed text-ink-soft">
+                  Coordinate the room, meal, music, suppliers, and key moments. Your checklist is saved with this event.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:min-w-[240px]">
+                <div className="border border-line bg-ivory p-3">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-ink-mute">Guests</p>
+                  <p className="mt-1 font-display text-[21px]">{event.guest_count}</p>
+                </div>
+                <div className="border border-line bg-ivory p-3">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-ink-mute">Reception budget</p>
+                  <p className="mt-1 font-display text-[21px]">{money(event.budget_cents)}</p>
+                </div>
+              </div>
+            </section>
+
+            <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
+              <Panel
+                eyebrow="Room, meal, music & handoffs"
+                title={`Reception checklist · ${tasks.filter((task) => task.category.toLowerCase() === "reception" && task.done).length}/${tasks.filter((task) => task.category.toLowerCase() === "reception").length}`}
+                action={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void addReceptionChecklist()}
+                    disabled={busy === "reception-checklist"}
+                  >
+                    {busy === "reception-checklist" ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <Plus size={12} aria-hidden />}
+                    Add essentials
+                  </Button>
+                }
+              >
+                {tasks.filter((task) => task.category.toLowerCase() === "reception").length ? (
+                  <ul className="space-y-1">
+                    {tasks.filter((task) => task.category.toLowerCase() === "reception").map((task) => (
+                      <li key={task.id} className="group flex items-start gap-3 border-b border-line/60 py-2.5 last:border-0">
+                        <button
+                          type="button"
+                          onClick={() => void toggleTask(task)}
+                          aria-label={task.done ? `Mark "${task.title}" incomplete` : `Mark "${task.title}" complete`}
+                          aria-pressed={task.done}
+                          className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center border transition-colors ${
+                            task.done ? "border-burgundy bg-burgundy text-ivory" : "border-line hover:border-burgundy"
+                          }`}
+                        >
+                          {busy === `task-${task.id}` ? <Loader2 size={10} className="animate-spin" aria-hidden /> : task.done ? <Check size={11} aria-hidden /> : null}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-[12px] leading-snug ${task.done ? "text-ink-mute line-through" : ""}`}>{task.title}</p>
+                          {task.due_date ? <p className="mt-0.5 text-[9.5px] uppercase tracking-[0.08em] text-ink-mute">Due {formatDate(task.due_date, "short")}</p> : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void deleteTask(task.id)}
+                          aria-label={`Delete "${task.title}"`}
+                          className="mt-0.5 text-ink-mute opacity-0 transition-opacity hover:text-danger focus:opacity-100 group-hover:opacity-100"
+                        >
+                          {busy === `delete-task-${task.id}` ? <Loader2 size={13} className="animate-spin" aria-hidden /> : <Trash2 size={13} aria-hidden />}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-3 text-[12px] leading-relaxed text-ink-mute">
+                    Start with the essentials, then tailor the checklist to your reception.
+                  </p>
+                )}
+                <AddTaskForm onAdd={addTask} busy={busy === "add-task"} defaultCategory="reception" idPrefix="reception-task" />
+              </Panel>
+
+              <Panel eyebrow={`Reception day · ${formatDateTime(event.event_date)}`} title="Run of show">
+                {plan ? (
+                  <EventFlowchart items={plan.event_day_schedule} />
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-[12px] leading-relaxed text-ink-soft">
+                      Generate an event plan to build a time-ordered run of show from your event brief.
+                    </p>
+                    <Button type="button" size="sm" onClick={() => void generate()} disabled={busy === "generate"}>
+                      {busy === "generate" ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <Sparkles size={12} aria-hidden />}
+                      Generate reception timeline
+                    </Button>
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            <Panel eyebrow="Keep the handoffs clear" title="Reception-day reminders">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  ["Before guests arrive", "Walk the room, check place settings, sound, lighting, and signage."],
+                  ["Guest welcome", "Give ushers and the venue lead the seating plan and accessibility notes."],
+                  ["During dinner", "Agree who cues courses, speeches, and any special moments."],
+                  ["Before close", "Confirm transport, supplier pack-down, lost property, and final venue check."],
+                ].map(([title, detail]) => (
+                  <article key={title} className="border border-line/70 bg-ivory p-3">
+                    <h3 className="text-[11px] font-semibold">{title}</h3>
+                    <p className="mt-1.5 text-[10.5px] leading-relaxed text-ink-soft">{detail}</p>
+                  </article>
+                ))}
+              </div>
+              <p className="mt-3 border-t border-line pt-2.5 text-[10px] text-ink-mute">
+                Use the Budget tab for reception quotes and payments. Availability and bookings are not verified by Eventora.
+              </p>
+            </Panel>
+          </div>
+        ) : null}
+
         {tab === "checklist" ? (
           <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
             <Panel
@@ -977,9 +1132,19 @@ function RevisionForm({ onGenerate, busy }: { onGenerate: (notes: string) => voi
   );
 }
 
-function AddTaskForm({ onAdd, busy }: { onAdd: (title: string, category: string, due: string) => Promise<void>; busy: boolean }) {
+function AddTaskForm({
+  onAdd,
+  busy,
+  defaultCategory = "vendor",
+  idPrefix = "task",
+}: {
+  onAdd: (title: string, category: string, due: string) => Promise<void>;
+  busy: boolean;
+  defaultCategory?: string;
+  idPrefix?: string;
+}) {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("vendor");
+  const [category, setCategory] = useState(defaultCategory);
   const [due, setDue] = useState("");
   return (
     <form
@@ -994,20 +1159,20 @@ function AddTaskForm({ onAdd, busy }: { onAdd: (title: string, category: string,
     >
       <div className="grid gap-2 sm:grid-cols-[1fr_105px_130px_auto]">
         <div>
-          <label htmlFor="task-title" className="sr-only">Task</label>
-          <input id="task-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={160} placeholder="Add a task…" className="field-input min-h-[38px] text-[12px]" />
+          <label htmlFor={`${idPrefix}-title`} className="sr-only">Task</label>
+          <input id={`${idPrefix}-title`} value={title} onChange={(event) => setTitle(event.target.value)} maxLength={160} placeholder="Add a task…" className="field-input min-h-[38px] text-[12px]" />
         </div>
         <div>
-          <label htmlFor="task-category" className="sr-only">Category</label>
-          <select id="task-category" value={category} onChange={(event) => setCategory(event.target.value)} className="field-input min-h-[38px] text-[12px]">
-            {["vendor", "venue", "catering", "decor", "budget", "guest experience", "operations", "risk", "general"].map((option) => (
+          <label htmlFor={`${idPrefix}-category`} className="sr-only">Category</label>
+          <select id={`${idPrefix}-category`} value={category} onChange={(event) => setCategory(event.target.value)} className="field-input min-h-[38px] text-[12px]">
+            {["vendor", "venue", "catering", "decor", "budget", "guest experience", "operations", "reception", "risk", "general"].map((option) => (
               <option key={option} value={option}>{titleCase(option)}</option>
             ))}
           </select>
         </div>
         <div>
-          <label htmlFor="task-due" className="sr-only">Due date</label>
-          <input id="task-due" type="date" value={due} onChange={(event) => setDue(event.target.value)} className="field-input min-h-[38px] text-[12px]" />
+          <label htmlFor={`${idPrefix}-due`} className="sr-only">Due date</label>
+          <input id={`${idPrefix}-due`} type="date" value={due} onChange={(event) => setDue(event.target.value)} className="field-input min-h-[38px] text-[12px]" />
         </div>
         <Button type="submit" size="sm" disabled={busy || title.trim().length < 2}>
           {busy ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <Plus size={12} aria-hidden />} Add

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { CostEstimator } from "@/components/landing/estimator";
+import { ExamplePlanDownload } from "@/components/landing/example-plan-download";
 import { LandingHeader } from "@/components/landing/header";
 import { ButtonLink } from "@/components/ui/button";
 import { Mark } from "@/components/ui/logo";
@@ -66,6 +67,22 @@ const categories = [
 ];
 
 const occasionLabels = ["Festivals", "Corporate", "Weddings", "Engagements", "Community", "Birthdays"];
+
+const exampleBudgetLines = [
+  { category: "Venue & site", amount: 11700 },
+  { category: "Catering & service", amount: 13500 },
+  { category: "Florals & decoration", amount: 5400 },
+  { category: "Photography", amount: 4950 },
+  { category: "Contingency", amount: 2700 },
+  { category: "Other costs", amount: 6750 },
+];
+
+const exampleBudgetTotal = exampleBudgetLines.reduce((total, line) => total + line.amount, 0);
+const exampleCurrency = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 const steps = [
   {
@@ -446,67 +463,103 @@ export default async function LandingPage() {
               </ButtonLink>
             </div>
 
-            <div className="relative">
-              <div className="absolute -right-3 -top-3 hidden h-full w-full border border-champagne sm:block" aria-hidden />
-              <div className="relative border border-line bg-[#fbf9f3]">
-                <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-burgundy" />
-                    <p className="text-[10.5px] font-bold uppercase tracking-[0.14em]">Example plan</p>
+            <div className="example-plan-frame">
+              <article className="example-plan-document" aria-label="Illustrative event plan">
+                <header className="example-plan-header">
+                  <div>
+                    <p className="example-plan-kicker">Example plan · illustrative only</p>
+                    <h3 className="example-plan-title">Event plan</h3>
                   </div>
-                  <span className="label-chip text-[8.5px]">120-guest wedding</span>
-                </div>
-                <div className="max-h-[480px] overflow-auto scroll-slim p-4 sm:p-5">
-                  <p className="eyebrow text-[8.5px] text-ink-mute">Event summary</p>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-soft">
-                    A garden wedding for 120 guests with dinner, simple floral decor, and an outdoor ceremony near sunset.
-                  </p>
-                  <div className="mt-4 border-t border-line pt-3">
-                    <p className="eyebrow text-[8.5px] text-ink-mute">Example budget (USD)</p>
-                    <p className="mt-1 text-[10px] text-ink-mute">Amounts and shares are examples from a $45,000 plan.</p>
-                    <ul className="mt-2 space-y-1.5">
-                      {[
-                        ["Venue & site", "$11,700", "26%"],
-                        ["Catering & service", "$13,500", "30%"],
-                        ["Florals & decoration", "$5,400", "12%"],
-                        ["Photography", "$4,950", "11%"],
-                        ["Contingency", "$2,700", "6%"],
-                        ["Other costs", "$6,750", "15%"],
-                      ].map(([label, amount, share]) => (
-                        <li key={label} className="flex items-baseline gap-2 text-[12px]">
-                          <span className="flex-1">{label}</span>
-                          <span className="tabular-nums text-ink-soft">{amount}</span>
-                          <span className="w-8 text-right text-[10px] text-ink-mute">{share}</span>
-                        </li>
+                  <div className="example-plan-brand" aria-label="Eventora AI">
+                    <span className="example-plan-window-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <span>Eventora AI</span>
+                  </div>
+                </header>
+
+                <section className="example-plan-event" aria-labelledby="example-plan-event-title">
+                  <div>
+                    <p className="example-plan-label">Event summary</p>
+                    <h4 id="example-plan-event-title" className="example-plan-event-title">Garden wedding</h4>
+                    <p className="example-plan-summary">
+                      A garden wedding for 120 guests with dinner, simple floral decor, and an outdoor ceremony near sunset.
+                    </p>
+                  </div>
+                  <dl className="example-plan-meta">
+                    <div>
+                      <dt>Occasion</dt>
+                      <dd>Wedding</dd>
+                    </div>
+                    <div>
+                      <dt>Guest count</dt>
+                      <dd>120 guests</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section className="example-plan-budget" aria-labelledby="example-plan-budget-title">
+                  <div className="example-plan-budget-heading">
+                    <div>
+                      <p className="example-plan-label">Example budget (USD)</p>
+                      <h4 id="example-plan-budget-title">A considered allocation</h4>
+                    </div>
+                    <span className="example-plan-budget-total">{exampleCurrency.format(exampleBudgetTotal)}</span>
+                  </div>
+                  <p className="example-plan-budget-note">Illustrative amounts only; confirm costs with suppliers.</p>
+                  <table className="example-plan-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Description</th>
+                        <th scope="col">Estimated cost</th>
+                        <th scope="col">Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {exampleBudgetLines.map((line) => (
+                        <tr key={line.category}>
+                          <td>{line.category}</td>
+                          <td>{exampleCurrency.format(line.amount)}</td>
+                          <td>{Math.round((line.amount / exampleBudgetTotal) * 100)}%</td>
+                        </tr>
                       ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th scope="row">Total example budget</th>
+                        <td colSpan={2}>{exampleCurrency.format(exampleBudgetTotal)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </section>
+
+                <section className="example-plan-notes" aria-label="Planning notes">
+                  <div>
+                    <p className="example-plan-label">Before the event</p>
+                    <ul>
+                      <li><span>16 weeks out</span>Confirm date and venue.</li>
+                      <li><span>8 weeks out</span>Confirm menu and decor.</li>
+                      <li><span>2 weeks out</span>Share the final schedule with suppliers.</li>
                     </ul>
-                    <div className="mt-2 flex justify-between border-t border-line pt-2 text-[12px] font-semibold">
-                      <span>Total example budget</span>
-                      <span>$45,000</span>
-                    </div>
                   </div>
-                  <div className="mt-4 grid gap-3 border-t border-line pt-3 sm:grid-cols-2">
-                    <div>
-                      <p className="eyebrow text-[8.5px] text-ink-mute">Before the event</p>
-                      <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-soft">
-                        16 weeks out - confirm date and venue.
-                        <br />
-                        8 weeks out - confirm menu and decor.
-                        <br />
-                        2 weeks out - share the final schedule with suppliers.
-                      </p>
-                    </div>
-                    <div>
-                      <p className="eyebrow text-[8.5px] text-ink-mute">Double-check</p>
-                      <p className="mt-1.5 border-l-2 border-champagne pl-2 text-[11.5px] leading-relaxed text-ink-soft">
-                        Have a rain backup for the outdoor ceremony. Confirm the venue has enough power.
-                      </p>
-                    </div>
+                  <div className="example-plan-double-check">
+                    <p className="example-plan-label">Double-check</p>
+                    <p>Have a rain backup for the outdoor ceremony. Confirm the venue has enough power.</p>
                   </div>
-                  <p className="mt-4 flex items-center gap-1.5 text-[10px] text-ink-mute">
-                    <FileJson size={11} aria-hidden /> The draft is checked for required sections before saving.
-                  </p>
-                </div>
+                </section>
+
+                <footer className="example-plan-footer">
+                  <span><FileJson size={13} aria-hidden /> A thoughtful starting point for your celebration.</span>
+                  <span>EVENTORA AI</span>
+                </footer>
+              </article>
+              <div className="example-plan-actions">
+                <ExamplePlanDownload
+                  budgetLines={exampleBudgetLines}
+                  budgetTotal={exampleBudgetTotal}
+                />
               </div>
             </div>
           </div>

@@ -9,9 +9,10 @@ export const metadata: Metadata = { title: "Sign in", robots: { index: false } }
 export default function SignInPage() {
   return (
     <AuthShell
-      eyebrow="Return to the studio"
+      mode="sign-in"
+      eyebrow="Pick up where you left off"
       title={<>Welcome <span className="display-italic">back.</span></>}
-      subtitle="Sign in to reach your events, saved plans, and planning intelligence."
+      subtitle="Your event plans, saved details, and next steps are right where you left them."
       footer={
         <div className="flex flex-wrap justify-between gap-3">
           <p>

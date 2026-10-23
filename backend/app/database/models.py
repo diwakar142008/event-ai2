@@ -60,6 +60,34 @@ class AuthSession(Base):
     user: Mapped[User] = relationship(back_populates="sessions")
 
 
+class OAuthIdentity(Base):
+    __tablename__ = "oauth_identities"
+    __table_args__ = (
+        UniqueConstraint("provider", "subject", name="uq_oauth_identity_provider_subject"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class OAuthLoginAttempt(Base):
+    __tablename__ = "oauth_login_attempts"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    browser_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    code_verifier: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    return_to: Mapped[str] = mapped_column(String(20), nullable=False, default="sign-in")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
