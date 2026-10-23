@@ -1,7 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
-import { jsPDF } from "jspdf";
+import { useState } from "react";
 
 type BudgetLine = {
   category: string;
@@ -23,7 +23,18 @@ export function ExamplePlanDownload({
   budgetLines,
   budgetTotal,
 }: ExamplePlanDownloadProps) {
-  function downloadPdf() {
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  async function downloadPdf() {
+    let pdfModule: typeof import("jspdf");
+    try {
+      pdfModule = await import("jspdf");
+    } catch {
+      setDownloadError("We couldn't prepare the PDF. Check your connection and try again.");
+      return;
+    }
+    setDownloadError(null);
+    const { jsPDF } = pdfModule;
     const pdf = new jsPDF({ format: "letter", unit: "pt" });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -185,14 +196,17 @@ export function ExamplePlanDownload({
   }
 
   return (
-    <button
-      type="button"
-      className="example-plan-download"
-      onClick={downloadPdf}
-      aria-label="Download the example event plan as a PDF"
-    >
-      <Download size={14} aria-hidden="true" />
-      Download PDF
-    </button>
+    <>
+      <button
+        type="button"
+        className="example-plan-download"
+        onClick={downloadPdf}
+        aria-label="Download the example event plan as a PDF"
+      >
+        <Download size={14} aria-hidden="true" />
+        Download PDF
+      </button>
+      {downloadError ? <p role="alert">{downloadError}</p> : null}
+    </>
   );
 }

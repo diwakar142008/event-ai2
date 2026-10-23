@@ -186,9 +186,11 @@ export function EventWorkspace({
   useEffect(() => {
     let cancelled = false;
     async function loadSignals() {
+      const requests: Promise<void>[] = [];
+
       if (event.predicted_cost_cents) {
-        try {
-          const risk = await api<BudgetRisk>("/ml/budget-risk", {
+        requests.push(
+          api<BudgetRisk>("/ml/budget-risk", {
             method: "POST",
             body: {
               event_type: event.event_type,
@@ -197,14 +199,20 @@ export function EventWorkspace({
               predicted_cost_cents: event.predicted_cost_cents,
               contingency_pct: 8,
             },
-          });
-          if (!cancelled) setRiskInfo(risk);
-        } catch {
-          if (!cancelled) setRiskInfo(null);
-        }
+          })
+            .then((risk) => {
+              if (!cancelled) setRiskInfo(risk);
+            })
+            .catch(() => {
+              if (!cancelled) setRiskInfo(null);
+            }),
+        );
+      } else {
+        setRiskInfo(null);
       }
-      try {
-        const recs = await api<{ items: RecommendationItem[] }>("/ml/recommend", {
+
+      requests.push(
+        api<{ items: RecommendationItem[] }>("/ml/recommend", {
           method: "POST",
           body: {
             event_type: event.event_type,
@@ -214,11 +222,16 @@ export function EventWorkspace({
             venue_type: event.venue_type,
             limit: 6,
           },
-        });
-        if (!cancelled) setRecommendations(recs.items);
-      } catch {
-        if (!cancelled) setRecommendations([]);
-      }
+        })
+          .then((recs) => {
+            if (!cancelled) setRecommendations(recs.items);
+          })
+          .catch(() => {
+            if (!cancelled) setRecommendations([]);
+          }),
+      );
+
+      await Promise.all(requests);
     }
     void loadSignals();
     return () => {
