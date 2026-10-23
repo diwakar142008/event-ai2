@@ -117,7 +117,7 @@ export function SettingsClient({
               </div>
             </div>
             {profileError ? <p role="alert" className="text-[12px] text-danger">{profileError}</p> : null}
-            {profileMessage ? <p className="text-[12px] text-[#3f523a]">{profileMessage}</p> : null}
+            {profileMessage ? <p role="status" aria-live="polite" className="text-[12px] text-[#3f523a]">{profileMessage}</p> : null}
             <div className="flex items-center justify-between gap-4">
               <p className="text-[10.5px] text-ink-mute">Member since {formatDate(user.created_at)}</p>
               <Button type="submit" size="sm" disabled={profileBusy || displayName.trim().length < 2}>

@@ -60,6 +60,16 @@ try {
 
   await page.getByRole("region", { name: "Quick action" }).getByRole("link", { name: "New event" }).click();
   await page.getByRole("heading", { name: "What are we planning?" }).waitFor();
+  await page.getByRole("button", { name: /Continue/ }).click();
+  const eventNameInput = page.getByLabel("Event name");
+  const eventNameDescriptionId = await eventNameInput.getAttribute("aria-describedby");
+  if (
+    (await eventNameInput.getAttribute("aria-invalid")) !== "true" ||
+    !eventNameDescriptionId ||
+    !(await page.locator(`#${eventNameDescriptionId}`).isVisible())
+  ) {
+    throw new Error("Event form validation is not associated accessibly with the invalid field.");
+  }
   await page.getByLabel("Event name").fill(eventName);
   await page.getByLabel("City / location").fill("Portland, Oregon");
   await page.getByLabel("Expected guests").fill("80");
@@ -76,10 +86,16 @@ try {
 
   await page.getByRole("button", { name: "Edit brief" }).click();
   await page.getByRole("dialog", { name: "The brief" }).waitFor();
+  const notesField = page.getByLabel("Notes");
+  const notesDescriptionId = await notesField.getAttribute("aria-describedby");
+  if (!notesDescriptionId || !(await page.locator(`#${notesDescriptionId}`).isVisible())) {
+    throw new Error("The notes field hint is not programmatically associated with its textarea.");
+  }
   const editedName = `${eventName} edited`;
   await page.getByLabel("Event name").fill(editedName);
   await page.getByRole("button", { name: "Save changes" }).click();
   await page.getByRole("heading", { name: editedName }).waitFor();
+  await page.getByRole("status").getByText("Brief updated. Estimate and risk refreshed.").waitFor();
 
   await page.getByRole("navigation", { name: "Event sections" }).getByRole("button", { name: "Assistant" }).click();
   const conversation = page.getByRole("log", { name: "Assistant conversation" });

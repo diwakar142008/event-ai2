@@ -15,6 +15,8 @@ function Wrapper({
   required?: boolean;
   children: ReactNode;
 }) {
+  const descriptionId = `${id}-description`;
+
   return (
     <div>
       <label className="field-label" htmlFor={id}>
@@ -22,12 +24,8 @@ function Wrapper({
         {required ? <span className="ml-1 text-burgundy" aria-hidden="true">*</span> : null}
       </label>
       {children}
-      {hint && !error ? <p className="field-hint">{hint}</p> : null}
-      {error ? (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {hint && !error ? <p id={descriptionId} className="field-hint">{hint}</p> : null}
+      {error ? <p id={descriptionId} className="field-error" role="alert">{error}</p> : null}
     </div>
   );
 }
@@ -49,13 +47,8 @@ export function TextField({
         {...props}
         className={`field-input ${className}`}
         aria-invalid={error ? true : undefined}
-        aria-describedby={hint || error ? `${id}-desc` : undefined}
+        aria-describedby={hint || error ? `${id}-description` : undefined}
       />
-      {(hint || error) && (
-        <span id={`${id}-desc`} className="sr-only">
-          {error ?? hint}
-        </span>
-      )}
     </Wrapper>
   );
 }
@@ -78,7 +71,14 @@ export function SelectField({
 }) {
   return (
     <Wrapper id={id} label={label} hint={hint} error={error} required={required}>
-      <select id={id} {...props} required={required} className={`field-input ${className}`} aria-invalid={error ? true : undefined}>
+      <select
+        id={id}
+        {...props}
+        required={required}
+        className={`field-input ${className}`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={hint || error ? `${id}-description` : undefined}
+      >
         {children}
       </select>
     </Wrapper>
@@ -96,7 +96,14 @@ export function TextAreaField({
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { id: string; label: string; hint?: string; error?: string }) {
   return (
     <Wrapper id={id} label={label} hint={hint} error={error} required={required}>
-      <textarea id={id} {...props} required={required} className={`field-input min-h-[110px] resize-y ${className}`} aria-invalid={error ? true : undefined}>
+      <textarea
+        id={id}
+        {...props}
+        required={required}
+        className={`field-input min-h-[110px] resize-y ${className}`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={hint || error ? `${id}-description` : undefined}
+      >
         {props.children}
       </textarea>
     </Wrapper>

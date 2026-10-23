@@ -128,6 +128,9 @@ export function EventWorkspace({
   const spent = expenses.reduce((total, expense) => total + expense.amount_cents, 0);
   const paid = expenses.filter((expense) => expense.paid).reduce((total, expense) => total + expense.amount_cents, 0);
   const done = tasks.filter((task) => task.done).length;
+  const openTasks = tasks.filter((task) => !task.done);
+  const receptionTasks = tasks.filter((task) => task.category.toLowerCase() === "reception");
+  const completedReceptionTasks = receptionTasks.filter((task) => task.done).length;
   const progress = tasks.length ? done / tasks.length : 0;
   const coverage = event.predicted_cost_cents ? event.budget_cents / event.predicted_cost_cents : null;
 
@@ -435,14 +438,16 @@ export function EventWorkspace({
       </div>
 
       {error ? <div className="mt-4"><InlineError message={error} /></div> : null}
-      {notice ? (
-        <div className="mt-4 flex items-start justify-between gap-3 border-l-2 border-sage bg-sage-soft/40 px-3 py-2 text-[12px]">
-          <span>{notice}</span>
-          <button type="button" onClick={() => setNotice(null)} className="text-[10px] uppercase tracking-[0.1em] text-ink-mute" aria-label="Dismiss notice">
-            Close
-          </button>
-        </div>
-      ) : null}
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {notice ? (
+          <div className="mt-4 flex items-start justify-between gap-3 border-l-2 border-sage bg-sage-soft/40 px-3 py-2 text-[12px]">
+            <span>{notice}</span>
+            <button type="button" onClick={() => setNotice(null)} className="text-[10px] uppercase tracking-[0.1em] text-ink-mute" aria-label="Dismiss notice">
+              Close
+            </button>
+          </div>
+        ) : null}
+      </div>
 
       <div className="mt-6 overflow-x-auto border-b border-line">
         <nav aria-label="Event sections" className="flex min-w-max">
@@ -568,16 +573,17 @@ export function EventWorkspace({
               </Panel>
 
               <Panel eyebrow="Next actions" title="Open tasks">
-                {tasks.filter((task) => !task.done).length === 0 ? (
+                {openTasks.length === 0 ? (
                   <p className="text-[11.5px] text-ink-mute">Nothing outstanding. Add tasks in the checklist tab.</p>
                 ) : (
                   <ul className="space-y-2.5">
-                    {tasks.filter((task) => !task.done).slice(0, 5).map((task) => (
+                    {openTasks.slice(0, 5).map((task) => (
                       <li key={task.id} className="flex items-start gap-2.5">
                         <button
                           type="button"
                           onClick={() => void toggleTask(task)}
                           aria-label={`Mark "${task.title}" complete`}
+                          disabled={busy === `task-${task.id}`}
                           className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border border-line hover:border-burgundy"
                         >
                           {busy === `task-${task.id}` ? <Loader2 size={10} className="animate-spin" aria-hidden /> : null}
@@ -762,7 +768,7 @@ export function EventWorkspace({
             <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
               <Panel
                 eyebrow="Room, meal, music & handoffs"
-                title={`Reception checklist · ${tasks.filter((task) => task.category.toLowerCase() === "reception" && task.done).length}/${tasks.filter((task) => task.category.toLowerCase() === "reception").length}`}
+                title={`Reception checklist · ${completedReceptionTasks}/${receptionTasks.length}`}
                 action={
                   <Button
                     type="button"
@@ -776,9 +782,9 @@ export function EventWorkspace({
                   </Button>
                 }
               >
-                {tasks.filter((task) => task.category.toLowerCase() === "reception").length ? (
+                {receptionTasks.length ? (
                   <ul className="space-y-1">
-                    {tasks.filter((task) => task.category.toLowerCase() === "reception").map((task) => (
+                    {receptionTasks.map((task) => (
                       <li key={task.id} className="group flex items-start gap-3 border-b border-line/60 py-2.5 last:border-0">
                         <button
                           type="button"
